@@ -247,7 +247,15 @@ export function registerAgentSSE(app: Express) {
     res.on('close', () => { finished = true; });
 
     try {
-      await upsertChatSession(sessionId);
+      // Attempt to extract userId from session cookie for proper ownership scoping
+      let agentUserId: number | undefined;
+      try {
+        const { sdk } = await import('./_core/sdk');
+        const user = await sdk.authenticateRequest(req);
+        if (user) agentUserId = user.id;
+      } catch { /* unauthenticated request, proceed without userId */ }
+
+      await upsertChatSession(sessionId, agentUserId);
       await saveChatMessage({ sessionId, role: "user", content: message });
 
       const history = await getChatHistory(sessionId, 20);

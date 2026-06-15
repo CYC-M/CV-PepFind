@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { Streamdown } from "streamdown";
 import { nanoid } from "nanoid";
+import { trpc } from "@/lib/trpc";
 
 interface Message {
   id: string;
@@ -33,6 +34,15 @@ const GREETING = `你好！我是 **CV-PepFind**，您的专业多肽筛选智�
 请告诉我您的研究需求，或使用下方快捷指令开始！`;
 
 export default function CVPepFindPanel() {
+  // Persist sessionId across page refreshes so chat history can be restored
+  const [sessionId, setSessionId] = useState<string>(() => {
+    const saved = localStorage.getItem('cv-pepfind-session-id');
+    if (saved) return saved;
+    const fresh = nanoid();
+    localStorage.setItem('cv-pepfind-session-id', fresh);
+    return fresh;
+  });
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'greeting',
@@ -43,8 +53,9 @@ export default function CVPepFindPanel() {
   ]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
-  const [sessionId] = useState(() => nanoid());
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showSessions, setShowSessions] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -54,6 +65,45 @@ export default function CVPepFindPanel() {
   }, []);
 
   useEffect(() => { scrollToBottom(); }, [messages]);
+
+  // Load recent sessions list
+  const { data: recentSessions } = trpc.agent.sessions.useQuery(undefined, {
+    staleTime: 30_000,
+  });
+
+  const switchSession = useCallback(async (sid: string) => {
+    setShowSessions(false);
+    localStorage.setItem('cv-pepfind-session-id', sid);
+    setSessionId(sid);
+    setHistoryLoaded(false);
+    setMessages([{
+      id: 'greeting',
+      role: 'assistant',
+      content: GREETING,
+      timestamp: new Date(),
+    }]);
+  }, []);
+
+  // Load persisted chat history for this session on mount
+  const { data: chatHistory } = trpc.agent.history.useQuery(
+    { sessionId },
+    { enabled: !!sessionId, staleTime: 30_000 }
+  );
+
+  useEffect(() => {
+    if (historyLoaded || !chatHistory || chatHistory.length === 0) return;
+    setHistoryLoaded(true);
+    const restored: Message[] = chatHistory.map(m => ({
+      id: `hist-${m.id}`,
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+      timestamp: new Date(m.createdAt),
+    }));
+    setMessages(prev => [
+      prev[0], // keep greeting
+      ...restored,
+    ]);
+  }, [chatHistory, historyLoaded]);
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || isStreaming) return;
@@ -143,6 +193,11 @@ export default function CVPepFindPanel() {
   };
 
   const clearChat = () => {
+    // Generate a new session for the fresh conversation
+    const newSessionId = nanoid();
+    localStorage.setItem('cv-pepfind-session-id', newSessionId);
+    setSessionId(newSessionId);
+    setHistoryLoaded(false);
     setMessages([{
       id: 'greeting',
       role: 'assistant',
@@ -168,13 +223,52 @@ export default function CVPepFindPanel() {
           </h2>
           <p className="text-[10px] text-muted-foreground">多肽筛选智能体</p>
         </div>
-        <button
-          onClick={clearChat}
-          className="ml-auto p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
-          title="清空对话"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-        </button>
+        <div className="ml-auto flex items-center gap-1 relative">
+          {/* Session history dropdown */}
+          <button
+            onClick={() => setShowSessions(v => !v)}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all flex items-center gap-1"
+            title="历史会话"
+          >
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showSessions ? 'rotate-180' : ''}`} />
+          </button>
+          <button
+            onClick={clearChat}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+            title="新建对话"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Sessions dropdown panel */}
+          {showSessions && (
+            <div className="absolute top-full right-0 mt-1 w-56 bg-popover border border-border rounded-xl shadow-xl z-50 overflow-hidden">
+              <div className="px-3 py-2 border-b border-border">
+                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">历史会话</p>
+              </div>
+              <div className="max-h-48 overflow-y-auto">
+                {(!recentSessions || recentSessions.length === 0) ? (
+                  <p className="px-3 py-3 text-xs text-muted-foreground text-center">暂无历史会话</p>
+                ) : (
+                  recentSessions.map(s => (
+                    <button
+                      key={s.sessionId}
+                      onClick={() => switchSession(s.sessionId)}
+                      className={`w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors ${
+                        s.sessionId === sessionId ? 'text-primary bg-primary/5' : 'text-foreground'
+                      }`}
+                    >
+                      <div className="font-medium truncate">{s.title ?? '未命名会话'}</div>
+                      <div className="text-muted-foreground text-[10px] mt-0.5">
+                        {new Date(s.updatedAt).toLocaleString()}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Messages */}

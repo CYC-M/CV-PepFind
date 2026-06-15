@@ -87,9 +87,15 @@ export async function getPeptideQuery(queryId: number) {
 export async function getQueryHistory(userId?: number, limit = 20) {
   const db = await getDb();
   if (!db) return [];
-  const rows = await db.select().from(peptideQueries)
-    .orderBy(desc(peptideQueries.createdAt))
-    .limit(limit);
+  // When userId is provided, filter to that user's queries only (privacy scoping)
+  const rows = userId
+    ? await db.select().from(peptideQueries)
+        .where(eq(peptideQueries.userId, userId))
+        .orderBy(desc(peptideQueries.createdAt))
+        .limit(limit)
+    : await db.select().from(peptideQueries)
+        .orderBy(desc(peptideQueries.createdAt))
+        .limit(limit);
   return rows;
 }
 
@@ -208,6 +214,13 @@ export async function getChatHistory(sessionId: string, limit = 50) {
 export async function getRecentChatSessions(userId?: number, limit = 10) {
   const db = await getDb();
   if (!db) return [];
+  // When userId is provided, filter to that user's sessions only (privacy scoping)
+  if (userId) {
+    return db.select().from(chatSessions)
+      .where(eq(chatSessions.userId, userId))
+      .orderBy(desc(chatSessions.updatedAt))
+      .limit(limit);
+  }
   return db.select().from(chatSessions)
     .orderBy(desc(chatSessions.updatedAt))
     .limit(limit);
