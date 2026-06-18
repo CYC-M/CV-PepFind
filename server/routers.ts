@@ -121,7 +121,7 @@ export const appRouter = router({
     // Non-streaming chat (fallback)
     chat: publicProcedure
       .input(z.object({
-        sessionId: z.string(),
+        sessionId: z.string().min(1).trim(),
         message: z.string().min(1).max(2000),
       }))
       .mutation(async ({ input, ctx }) => {
@@ -232,7 +232,8 @@ export function registerPipelineSSE(app: Express) {
 export function registerAgentSSE(app: Express) {
   app.post('/api/agent/stream', async (req: Request, res: Response) => {
     const { sessionId, message } = req.body;
-    if (!sessionId || !message) {
+    const cleanSessionId = typeof sessionId === 'string' ? sessionId.trim() : '';
+    if (!cleanSessionId || !message) {
       res.status(400).json({ error: 'Missing sessionId or message' });
       return;
     }
@@ -255,10 +256,10 @@ export function registerAgentSSE(app: Express) {
         if (user) agentUserId = user.id;
       } catch { /* unauthenticated request, proceed without userId */ }
 
-      await upsertChatSession(sessionId, agentUserId);
-      await saveChatMessage({ sessionId, role: "user", content: message });
+      await upsertChatSession(cleanSessionId, agentUserId);
+      await saveChatMessage({ sessionId: cleanSessionId, role: "user", content: message });
 
-      const history = await getChatHistory(sessionId, 20);
+      const history = await getChatHistory(cleanSessionId, 20);
       const messages = history.map(m => ({ role: m.role as "user" | "assistant", content: m.content }));
 
       // Call LLM with streaming

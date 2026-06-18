@@ -259,9 +259,9 @@ export default function CVPepFindPanel() {
                 {(!recentSessions || recentSessions.length === 0) ? (
                   <p className="px-3 py-3 text-xs text-muted-foreground text-center">暂无历史会话</p>
                 ) : (
-                  recentSessions.map(s => (
+                  recentSessions.filter(s => !!s.sessionId).map(s => (
                     <button
-                      key={s.sessionId}
+                      key={s.sessionId || `session-${s.updatedAt}`}
                       onClick={() => switchSession(s.sessionId)}
                       className={`w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors ${
                         s.sessionId === sessionId ? 'text-primary bg-primary/5' : 'text-foreground'
@@ -367,9 +367,9 @@ export default function CVPepFindPanel() {
       {/* Quick Prompts */}
       <div className="px-3 py-2 border-t border-border/50">
         <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          {QUICK_PROMPTS.map((qp, i) => (
+          {QUICK_PROMPTS.map((qp) => (
             <button
-              key={i}
+              key={qp.label}
               onClick={() => sendMessage(qp.prompt)}
               disabled={isStreaming}
               className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground text-[10px] font-medium transition-all disabled:opacity-50 border border-transparent hover:border-border"

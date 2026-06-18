@@ -215,13 +215,16 @@ export async function getRecentChatSessions(userId?: number, limit = 10) {
   const db = await getDb();
   if (!db) return [];
   // When userId is provided, filter to that user's sessions only (privacy scoping)
+  // Also filter out any rows with empty/null sessionId to prevent React key warnings
   if (userId) {
-    return db.select().from(chatSessions)
+    const rows = await db.select().from(chatSessions)
       .where(eq(chatSessions.userId, userId))
       .orderBy(desc(chatSessions.updatedAt))
       .limit(limit);
+    return rows.filter(r => !!r.sessionId && r.sessionId.trim().length > 0);
   }
-  return db.select().from(chatSessions)
+  const rows = await db.select().from(chatSessions)
     .orderBy(desc(chatSessions.updatedAt))
     .limit(limit);
+  return rows.filter(r => !!r.sessionId && r.sessionId.trim().length > 0);
 }
