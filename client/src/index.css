@@ -345,31 +345,35 @@
   }
 }
 
-/* Utility classes for AI states */
-.ai-breathing {
-  animation: breathing-light 3s ease-in-out infinite;
-}
+/* Utility classes for AI states - using @layer to avoid Tailwind conflicts */
+@layer components {
+  .ai-breathing {
+    animation: breathing-light 3s ease-in-out infinite;
+  }
 
-.ai-processing {
-  background: linear-gradient(-45deg, #10b981, #06b6d4, #10b981, #06b6d4);
-  background-size: 400% 400%;
-  animation: fluid-wave 3s ease infinite, morph 4s ease-in-out infinite;
-}
+  .ai-processing {
+    background: linear-gradient(-45deg, #10b981, #06b6d4, #10b981, #06b6d4);
+    background-size: 400% 400%;
+    animation: fluid-wave 3s ease infinite, morph 4s ease-in-out infinite;
+  }
 
-.ai-avatar-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, rgba(16, 185, 129, 0.2), transparent);
-}
+  .ai-avatar-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(16, 185, 129, 0.2), transparent);
+  }
 
-.ai-avatar-container.idle {
-  @apply ai-breathing;
-}
+  .ai-avatar-container.idle {
+    animation: breathing-light 3s ease-in-out infinite;
+  }
 
-.ai-avatar-container.processing {
-  @apply ai-processing;
+  .ai-avatar-container.processing {
+    background: linear-gradient(-45deg, #10b981, #06b6d4, #10b981, #06b6d4);
+    background-size: 400% 400%;
+    animation: fluid-wave 3s ease infinite, morph 4s ease-in-out infinite;
+  }
 }
