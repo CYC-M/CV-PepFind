@@ -83,3 +83,7 @@
 - [x] 快捷按钮自动触发Pipeline分析流程
 - [x] 设置按钮点击响应修复
 - [x] CV-PepFind标题样式区分（CV白色细体+PepFind翠绿粗体）
+
+## Bug修复（新增）
+- [x] 修复 React 重复 key "" 错误（根本原因：SettingsPanel.tsx 中 AnimatePresence mode="wait" 直接包裹三个 TabsContent，导致 Radix UI 组件没有 key 传给 AnimatePresence，React 报告重复 key=""）
+- [x] 修复方案：将 AnimatePresence 移入每个 TabsContent 内部，并用条件渲染 {activeTab === 'xxx' && ...} 控制 motion.div 的显示

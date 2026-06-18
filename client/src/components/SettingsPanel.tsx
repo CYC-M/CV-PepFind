@@ -53,101 +53,111 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
               </TabsTrigger>
             </TabsList>
 
-            <AnimatePresence mode="wait">
-              {/* General Tab */}
-              <TabsContent value="general" className="space-y-6 mt-6">
-                <motion.div
-                  key="general"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="space-y-6"
-                >
-                  {/* Theme Selection */}
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium text-foreground/80">{t('settings.theme')}</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {themeOptions.map(({ value, label, icon: Icon }) => (
-                        <button
-                          key={value}
-                          onClick={() => {
-                        // Theme change will be implemented in next phase
-                        console.log('Theme change to:', value);
-                      }}
-                          className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${
-                            theme === value
-                              ? 'border-emerald-500 bg-emerald-500/10'
-                              : 'border-border/30 hover:border-border/50 bg-background'
-                          }`}
-                        >
-                          <Icon className="w-5 h-5" />
-                          <span className="text-xs font-medium">{label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Language Selection */}
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium text-foreground/80">{t('settings.language')}</label>
-                    <Select value={language} onValueChange={(value) => setLanguage(value as Language)}>
-                      <SelectTrigger className="bg-background border-border/30">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {languages.map((lang) => (
-                          <SelectItem key={lang.code} value={lang.code}>
-                            <span className="flex items-center gap-2">
-                              {lang.nativeName} ({lang.name})
-                            </span>
-                          </SelectItem>
+            {/* General Tab */}
+            <TabsContent value="general" className="space-y-6 mt-6">
+              <AnimatePresence mode="wait">
+                {activeTab === 'general' && (
+                  <motion.div
+                    key="general"
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-6"
+                  >
+                    {/* Theme Selection */}
+                    <div className="space-y-3">
+                      <label className="text-sm font-medium text-foreground/80">{t('settings.theme')}</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {themeOptions.map(({ value, label, icon: Icon }) => (
+                          <button
+                            key={value}
+                            onClick={() => {
+                              // Theme change will be implemented in next phase
+                              console.log('Theme change to:', value);
+                            }}
+                            className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${
+                              theme === value
+                                ? 'border-emerald-500 bg-emerald-500/10'
+                                : 'border-border/30 hover:border-border/50 bg-background'
+                            }`}
+                          >
+                            <Icon className="w-5 h-5" />
+                            <span className="text-xs font-medium">{label}</span>
+                          </button>
                         ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </motion.div>
-              </TabsContent>
-
-              {/* Account Tab */}
-              <TabsContent value="account" className="space-y-6 mt-6">
-                <motion.div
-                  key="account"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="space-y-4"
-                >
-                  <div className="p-4 rounded-lg bg-background border border-border/30">
-                    <p className="text-sm text-foreground/60">{t('settings.account')} - Coming soon</p>
-                  </div>
-                </motion.div>
-              </TabsContent>
-
-              {/* About Tab */}
-              <TabsContent value="about" className="space-y-6 mt-6">
-                <motion.div
-                  key="about"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="space-y-4"
-                >
-                  <div className="space-y-3">
-                    <div className="p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
-                      <p className="text-sm font-medium text-emerald-400">CV-PepFind</p>
-                      <p className="text-xs text-foreground/60 mt-1">{t('common.tagline')}</p>
+                      </div>
                     </div>
+
+                    {/* Language Selection */}
+                    <div className="space-y-3">
+                      <label className="text-sm font-medium text-foreground/80">{t('settings.language')}</label>
+                      <Select value={language} onValueChange={(value) => setLanguage(value as Language)}>
+                        <SelectTrigger className="bg-background border-border/30">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {languages.map((lang) => (
+                            <SelectItem key={lang.code} value={lang.code}>
+                              <span className="flex items-center gap-2">
+                                {lang.nativeName} ({lang.name})
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </TabsContent>
+
+            {/* Account Tab */}
+            <TabsContent value="account" className="space-y-6 mt-6">
+              <AnimatePresence mode="wait">
+                {activeTab === 'account' && (
+                  <motion.div
+                    key="account"
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-4"
+                  >
                     <div className="p-4 rounded-lg bg-background border border-border/30">
-                      <p className="text-xs text-foreground/60">{t('settings.version')}: 1.0.0</p>
-                      <p className="text-xs text-foreground/60 mt-2">{t('settings.copyright')}</p>
+                      <p className="text-sm text-foreground/60">{t('settings.account')} - Coming soon</p>
                     </div>
-                  </div>
-                </motion.div>
-              </TabsContent>
-            </AnimatePresence>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </TabsContent>
+
+            {/* About Tab */}
+            <TabsContent value="about" className="space-y-6 mt-6">
+              <AnimatePresence mode="wait">
+                {activeTab === 'about' && (
+                  <motion.div
+                    key="about"
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-4"
+                  >
+                    <div className="space-y-3">
+                      <div className="p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                        <p className="text-sm font-medium text-emerald-400">CV-PepFind</p>
+                        <p className="text-xs text-foreground/60 mt-1">{t('common.tagline')}</p>
+                      </div>
+                      <div className="p-4 rounded-lg bg-background border border-border/30">
+                        <p className="text-xs text-foreground/60">{t('settings.version')}: 1.0.0</p>
+                        <p className="text-xs text-foreground/60 mt-2">{t('settings.copyright')}</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </TabsContent>
           </Tabs>
 
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border/30">
