@@ -7,6 +7,7 @@ import {
 import PeptideQueryPanel, { QueryOptions } from "@/components/PeptideQueryPanel";
 import VisualizationPanel from "@/components/VisualizationPanel";
 import CVPepFindPanel from "@/components/CVPepFindPanel";
+import { SettingsPanel } from "@/components/SettingsPanel";
 import { trpc } from "@/lib/trpc";
 import { useIsMobile } from "@/hooks/useMobile";
 
@@ -20,6 +21,7 @@ interface QuerySession {
 export default function Home() {
   const [currentSession, setCurrentSession] = useState<QuerySession | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
   const [mobileTab, setMobileTab] = useState<'query' | 'viz' | 'agent'>('viz');
@@ -102,7 +104,9 @@ export default function Home() {
   // ════════════════════════════════════════════════════════════════════════════
   if (!isMobile) {
     return (
-      <div className="flex flex-col h-screen w-screen overflow-hidden bg-background fixed inset-0">
+      <>
+        <SettingsPanel open={showSettings} onOpenChange={setShowSettings} />
+        <div className="flex flex-col h-screen w-screen overflow-hidden bg-background fixed inset-0">
         {/* ── Top Navigation Bar ─────────────────────────────────────────────── */}
         <header className="flex-shrink-0 h-12 border-b border-border bg-card/50 backdrop-blur-sm flex items-center px-4 gap-3 z-50">
           {/* Logo */}
@@ -330,6 +334,7 @@ export default function Home() {
           </motion.div>
         </div>
       </div>
+      </>
     );
   }
 
@@ -359,7 +364,12 @@ export default function Home() {
           >
             <History className="w-3.5 h-3.5" />
           </button>
-          <button className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all">
+          {/* 设置按钮：打开设置面板，包含个人信息、切换语言（支持8大语言）、退出登录等常见设置 */}
+          <button
+            onClick={() => setShowSettings(true)}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+            title="Settings: Language, Theme, Account"
+          >
             <Settings className="w-3.5 h-3.5" />
           </button>
         </div>
