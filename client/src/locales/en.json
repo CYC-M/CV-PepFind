@@ -1,0 +1,79 @@
+{
+  "common": {
+    "appName": "CV-PepFind",
+    "tagline": "Peptide Discovery Platform",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close"
+  },
+  "header": {
+    "history": "History",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "leftPanel": {
+    "title": "Peptide Query",
+    "targetProtein": "Target Protein",
+    "targetProteinPlaceholder": "e.g., ACE2, EGFR, PD-1...",
+    "sequences": "Sequences",
+    "sequencesPlaceholder": "Enter sequence or FASTA format",
+    "addSequence": "Add Sequence",
+    "batchInput": "Batch Input",
+    "filters": "Filters",
+    "esmThreshold": "ESM-2 Threshold",
+    "confidenceThreshold": "Confidence Threshold",
+    "pipelineOptions": "Pipeline Options",
+    "enableESMFold": "Enable ESMFold",
+    "enableDocking": "Enable Docking",
+    "launchPipeline": "Launch Pipeline",
+    "viewHistory": "View History"
+  },
+  "centerPanel": {
+    "structure2D": "2D Structure",
+    "structure3D": "3D Structure",
+    "pipeline": "Pipeline Progress",
+    "dockingResults": "Docking Results",
+    "topResults": "Top Results",
+    "affinity": "Affinity",
+    "confidence": "Confidence"
+  },
+  "rightPanel": {
+    "title": "CV-PepFind",
+    "subtitle": "Peptide Discovery Agent",
+    "greeting": "Hello! I'm CV-PepFind, your intelligent peptide discovery assistant.",
+    "prompt": "Tell me your research needs, or use the quick commands below to get started!",
+    "queryFunction": "Query peptide function & structure",
+    "retrievePeptides": "Retrieve related peptides from database",
+    "analyzeSequence": "Analyze sequence-activity relationships (SAR)",
+    "optimizationSuggestions": "Provide peptide optimization suggestions",
+    "clearChat": "Clear Chat",
+    "newSession": "New Session"
+  },
+  "hero": {
+    "greeting": "Welcome to CV-PepFind",
+    "subtitle": "Your Intelligent Peptide Discovery Partner",
+    "prompt1": "I'm ready, let's go",
+    "prompt2": "How can I help you find peptides today?",
+    "prompt3": "Analyze sequences with precision",
+    "prompt4": "Discover novel peptide candidates",
+    "prompt5": "Optimize binding affinity",
+    "getStarted": "Get Started",
+    "learnMore": "Learn More"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "account": "Account",
+    "about": "About",
+    "theme": "Theme",
+    "language": "Language",
+    "lightMode": "Light",
+    "darkMode": "Dark",
+    "systemMode": "System",
+    "version": "Version",
+    "copyright": "© 2026 CV-PepFind. All rights reserved."
+  }
+}

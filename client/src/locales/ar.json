@@ -1,0 +1,79 @@
+{
+  "common": {
+    "appName": "CV-PepFind",
+    "tagline": "منصة اكتشاف الببتيدات",
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "success": "نجاح",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "close": "إغلاق"
+  },
+  "header": {
+    "history": "السجل",
+    "settings": "الإعدادات",
+    "logout": "تسجيل الخروج"
+  },
+  "leftPanel": {
+    "title": "استعلام الببتيدات",
+    "targetProtein": "البروتين المستهدف",
+    "targetProteinPlaceholder": "مثل: ACE2, EGFR, PD-1...",
+    "sequences": "التسلسلات",
+    "sequencesPlaceholder": "أدخل التسلسل أو تنسيق FASTA",
+    "addSequence": "إضافة تسلسل",
+    "batchInput": "إدخال جماعي",
+    "filters": "المرشحات",
+    "esmThreshold": "عتبة ESM-2",
+    "confidenceThreshold": "عتبة الثقة",
+    "pipelineOptions": "خيارات خط الأنابيب",
+    "enableESMFold": "تفعيل ESMFold",
+    "enableDocking": "تفعيل الرسو",
+    "launchPipeline": "تشغيل خط الأنابيب",
+    "viewHistory": "عرض السجل"
+  },
+  "centerPanel": {
+    "structure2D": "الهيكل ثنائي الأبعاد",
+    "structure3D": "الهيكل ثلاثي الأبعاد",
+    "pipeline": "تقدم خط الأنابيب",
+    "dockingResults": "نتائج الرسو",
+    "topResults": "النتائج الأفضل",
+    "affinity": "التقاربية",
+    "confidence": "الثقة"
+  },
+  "rightPanel": {
+    "title": "CV-PepFind",
+    "subtitle": "وكيل اكتشاف الببتيدات",
+    "greeting": "مرحبا! أنا CV-PepFind، مساعدك الذكي في اكتشاف الببتيدات.",
+    "prompt": "أخبرني باحتياجاتك البحثية أو استخدم الأوامر السريعة أدناه للبدء!",
+    "queryFunction": "الاستعلام عن وظيفة وهيكل الببتيدات",
+    "retrievePeptides": "استرجاع الببتيدات ذات الصلة من قاعدة البيانات",
+    "analyzeSequence": "تحليل العلاقات بين التسلسل والنشاط (SAR)",
+    "optimizationSuggestions": "تقديم اقتراحات تحسين الببتيدات",
+    "clearChat": "مسح الدردشة",
+    "newSession": "جلسة جديدة"
+  },
+  "hero": {
+    "greeting": "مرحبا بك في CV-PepFind",
+    "subtitle": "شريكك الذكي في اكتشاف الببتيدات",
+    "prompt1": "أنا مستعد، دعنا نبدأ",
+    "prompt2": "كيف يمكنني مساعدتك في العثور على الببتيدات اليوم؟",
+    "prompt3": "تحليل التسلسلات بدقة",
+    "prompt4": "اكتشف مرشحي الببتيدات الجدد",
+    "prompt5": "تحسين تقاربية الربط",
+    "getStarted": "ابدأ",
+    "learnMore": "معرفة المزيد"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "general": "عام",
+    "account": "الحساب",
+    "about": "حول",
+    "theme": "المظهر",
+    "language": "اللغة",
+    "lightMode": "فاتح",
+    "darkMode": "داكن",
+    "systemMode": "النظام",
+    "version": "الإصدار",
+    "copyright": "© 2026 CV-PepFind. جميع الحقوق محفوظة."
+  }
+}

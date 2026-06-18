@@ -1,0 +1,79 @@
+{
+  "common": {
+    "appName": "CV-PepFind",
+    "tagline": "Платформа открытия пептидов",
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "success": "Успех",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "close": "Закрыть"
+  },
+  "header": {
+    "history": "История",
+    "settings": "Настройки",
+    "logout": "Выход"
+  },
+  "leftPanel": {
+    "title": "Запрос пептидов",
+    "targetProtein": "Целевой белок",
+    "targetProteinPlaceholder": "например, ACE2, EGFR, PD-1...",
+    "sequences": "Последовательности",
+    "sequencesPlaceholder": "Введите последовательность или формат FASTA",
+    "addSequence": "Добавить последовательность",
+    "batchInput": "Пакетный ввод",
+    "filters": "Фильтры",
+    "esmThreshold": "Порог ESM-2",
+    "confidenceThreshold": "Порог доверия",
+    "pipelineOptions": "Параметры конвейера",
+    "enableESMFold": "Включить ESMFold",
+    "enableDocking": "Включить стыковку",
+    "launchPipeline": "Запустить конвейер",
+    "viewHistory": "Просмотр истории"
+  },
+  "centerPanel": {
+    "structure2D": "Структура 2D",
+    "structure3D": "Структура 3D",
+    "pipeline": "Ход выполнения конвейера",
+    "dockingResults": "Результаты стыковки",
+    "topResults": "Лучшие результаты",
+    "affinity": "Сродство",
+    "confidence": "Доверие"
+  },
+  "rightPanel": {
+    "title": "CV-PepFind",
+    "subtitle": "Агент открытия пептидов",
+    "greeting": "Привет! Я CV-PepFind, ваш интеллектуальный помощник по открытию пептидов.",
+    "prompt": "Расскажите мне о ваших потребностях в исследованиях или используйте быстрые команды ниже, чтобы начать!",
+    "queryFunction": "Запрос функции и структуры пептидов",
+    "retrievePeptides": "Получить связанные пептиды из базы данных",
+    "analyzeSequence": "Анализ отношений последовательность-активность (SAR)",
+    "optimizationSuggestions": "Предоставить предложения по оптимизации пептидов",
+    "clearChat": "Очистить чат",
+    "newSession": "Новый сеанс"
+  },
+  "hero": {
+    "greeting": "Добро пожаловать в CV-PepFind",
+    "subtitle": "Ваш интеллектуальный партнер по открытию пептидов",
+    "prompt1": "Я готов, давайте начнем",
+    "prompt2": "Как я могу помочь вам найти пептиды сегодня?",
+    "prompt3": "Анализировать последовательности с точностью",
+    "prompt4": "Откройте новых кандидатов в пептиды",
+    "prompt5": "Оптимизировать сродство связывания",
+    "getStarted": "Начало работы",
+    "learnMore": "Узнать больше"
+  },
+  "settings": {
+    "title": "Настройки",
+    "general": "Общие",
+    "account": "Учетная запись",
+    "about": "О программе",
+    "theme": "Тема",
+    "language": "Язык",
+    "lightMode": "Светлый",
+    "darkMode": "Темный",
+    "systemMode": "Система",
+    "version": "Версия",
+    "copyright": "© 2026 CV-PepFind. Все права защищены."
+  }
+}

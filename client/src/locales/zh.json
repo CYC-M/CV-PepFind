@@ -1,0 +1,79 @@
+{
+  "common": {
+    "appName": "CV-PepFind",
+    "tagline": "多肽发现平台",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "cancel": "取消",
+    "save": "保存",
+    "close": "关闭"
+  },
+  "header": {
+    "history": "历史记录",
+    "settings": "设置",
+    "logout": "退出登录"
+  },
+  "leftPanel": {
+    "title": "多肽查询",
+    "targetProtein": "靶点蛋白",
+    "targetProteinPlaceholder": "例如：ACE2, EGFR, PD-1...",
+    "sequences": "序列",
+    "sequencesPlaceholder": "输入序列或FASTA格式",
+    "addSequence": "添加序列",
+    "batchInput": "批量输入",
+    "filters": "筛选条件",
+    "esmThreshold": "ESM-2阈值",
+    "confidenceThreshold": "置信度阈值",
+    "pipelineOptions": "流水线选项",
+    "enableESMFold": "启用ESMFold",
+    "enableDocking": "启用Docking",
+    "launchPipeline": "启动Pipeline",
+    "viewHistory": "查看历史"
+  },
+  "centerPanel": {
+    "structure2D": "2D结构",
+    "structure3D": "3D结构",
+    "pipeline": "Pipeline进度",
+    "dockingResults": "Docking结果",
+    "topResults": "Top结果",
+    "affinity": "亲和力",
+    "confidence": "置信度"
+  },
+  "rightPanel": {
+    "title": "CV-PepFind",
+    "subtitle": "多肽发现智能体",
+    "greeting": "你好！我是CV-PepFind，您的智能多肽发现助手。",
+    "prompt": "告诉我您的研究需求，或使用下方快捷指令开始！",
+    "queryFunction": "查询多肽功能与结构信息",
+    "retrievePeptides": "从资料库中召回相关多肽",
+    "analyzeSequence": "分析序列-活性关系（SAR）",
+    "optimizationSuggestions": "提供多肽优化改造建议",
+    "clearChat": "清空对话",
+    "newSession": "新建会话"
+  },
+  "hero": {
+    "greeting": "欢迎使用CV-PepFind",
+    "subtitle": "您的智能多肽发现伙伴",
+    "prompt1": "我已准备好，让我们开始吧",
+    "prompt2": "今天有什么我可以帮助您发现的多肽吗？",
+    "prompt3": "精准分析序列",
+    "prompt4": "发现新型多肽候选",
+    "prompt5": "优化结合亲和力",
+    "getStarted": "开始使用",
+    "learnMore": "了解更多"
+  },
+  "settings": {
+    "title": "设置",
+    "general": "通用",
+    "account": "账户",
+    "about": "关于",
+    "theme": "主题",
+    "language": "语言",
+    "lightMode": "浅色",
+    "darkMode": "深色",
+    "systemMode": "系统",
+    "version": "版本",
+    "copyright": "© 2026 CV-PepFind. 保留所有权利。"
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "common": {
+    "appName": "CV-PepFind",
+    "tagline": "Plataforma de Descubrimiento de Péptidos",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "close": "Cerrar"
+  },
+  "header": {
+    "history": "Historial",
+    "settings": "Configuración",
+    "logout": "Cerrar sesión"
+  },
+  "leftPanel": {
+    "title": "Consulta de Péptidos",
+    "targetProtein": "Proteína Objetivo",
+    "targetProteinPlaceholder": "p. ej., ACE2, EGFR, PD-1...",
+    "sequences": "Secuencias",
+    "sequencesPlaceholder": "Ingrese secuencia o formato FASTA",
+    "addSequence": "Agregar Secuencia",
+    "batchInput": "Entrada por Lotes",
+    "filters": "Filtros",
+    "esmThreshold": "Umbral ESM-2",
+    "confidenceThreshold": "Umbral de Confianza",
+    "pipelineOptions": "Opciones de Canalización",
+    "enableESMFold": "Habilitar ESMFold",
+    "enableDocking": "Habilitar Acoplamiento",
+    "launchPipeline": "Iniciar Canalización",
+    "viewHistory": "Ver Historial"
+  },
+  "centerPanel": {
+    "structure2D": "Estructura 2D",
+    "structure3D": "Estructura 3D",
+    "pipeline": "Progreso de Canalización",
+    "dockingResults": "Resultados de Acoplamiento",
+    "topResults": "Resultados Principales",
+    "affinity": "Afinidad",
+    "confidence": "Confianza"
+  },
+  "rightPanel": {
+    "title": "CV-PepFind",
+    "subtitle": "Agente de Descubrimiento de Péptidos",
+    "greeting": "¡Hola! Soy CV-PepFind, tu asistente inteligente de descubrimiento de péptidos.",
+    "prompt": "Cuéntame tus necesidades de investigación o usa los comandos rápidos a continuación para comenzar.",
+    "queryFunction": "Consultar función y estructura de péptidos",
+    "retrievePeptides": "Recuperar péptidos relacionados de la base de datos",
+    "analyzeSequence": "Analizar relaciones secuencia-actividad (SAR)",
+    "optimizationSuggestions": "Proporcionar sugerencias de optimización de péptidos",
+    "clearChat": "Limpiar Chat",
+    "newSession": "Nueva Sesión"
+  },
+  "centerPanel": {
+    "structure2D": "Estructura 2D",
+    "structure3D": "Estructura 3D",
+    "pipeline": "Progreso de Canalización",
+    "dockingResults": "Resultados de Acoplamiento",
+    "topResults": "Resultados Principales",
+    "affinity": "Afinidad",
+    "confidence": "Confianza"
+  },
+  "hero": {
+    "greeting": "Bienvenido a CV-PepFind",
+    "subtitle": "Tu Socio Inteligente de Descubrimiento de Péptidos",
+    "prompt1": "Estoy listo, vamos",
+    "prompt2": "¿Cómo puedo ayudarte a encontrar péptidos hoy?",
+    "prompt3": "Analizar secuencias con precisión",
+    "prompt4": "Descubrir nuevos candidatos de péptidos",
+    "prompt5": "Optimizar afinidad de unión",
+    "getStarted": "Comenzar",
+    "learnMore": "Más Información"
+  },
+  "settings": {
+    "title": "Configuración",
+    "general": "General",
+    "account": "Cuenta",
+    "about": "Acerca de",
+    "theme": "Tema",
+    "language": "Idioma",
+    "lightMode": "Claro",
+    "darkMode": "Oscuro",
+    "systemMode": "Sistema",
+    "version": "Versión",
+    "copyright": "© 2026 CV-PepFind. Todos los derechos reservados."
+  }
+}

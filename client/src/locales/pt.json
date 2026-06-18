@@ -1,0 +1,79 @@
+{
+  "common": {
+    "appName": "CV-PepFind",
+    "tagline": "Plataforma de Descoberta de Peptídeos",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "close": "Fechar"
+  },
+  "header": {
+    "history": "Histórico",
+    "settings": "Configurações",
+    "logout": "Sair"
+  },
+  "leftPanel": {
+    "title": "Consulta de Peptídeos",
+    "targetProtein": "Proteína Alvo",
+    "targetProteinPlaceholder": "p. ex., ACE2, EGFR, PD-1...",
+    "sequences": "Sequências",
+    "sequencesPlaceholder": "Digite a sequência ou formato FASTA",
+    "addSequence": "Adicionar Sequência",
+    "batchInput": "Entrada em Lote",
+    "filters": "Filtros",
+    "esmThreshold": "Limiar ESM-2",
+    "confidenceThreshold": "Limiar de Confiança",
+    "pipelineOptions": "Opções de Pipeline",
+    "enableESMFold": "Ativar ESMFold",
+    "enableDocking": "Ativar Acoplamento",
+    "launchPipeline": "Iniciar Pipeline",
+    "viewHistory": "Ver Histórico"
+  },
+  "centerPanel": {
+    "structure2D": "Estrutura 2D",
+    "structure3D": "Estrutura 3D",
+    "pipeline": "Progresso do Pipeline",
+    "dockingResults": "Resultados de Acoplamento",
+    "topResults": "Principais Resultados",
+    "affinity": "Afinidade",
+    "confidence": "Confiança"
+  },
+  "rightPanel": {
+    "title": "CV-PepFind",
+    "subtitle": "Agente de Descoberta de Peptídeos",
+    "greeting": "Olá! Sou CV-PepFind, seu assistente inteligente de descoberta de peptídeos.",
+    "prompt": "Conte-me suas necessidades de pesquisa ou use os comandos rápidos abaixo para começar!",
+    "queryFunction": "Consultar função e estrutura de peptídeos",
+    "retrievePeptides": "Recuperar peptídeos relacionados do banco de dados",
+    "analyzeSequence": "Analisar relações sequência-atividade (SAR)",
+    "optimizationSuggestions": "Fornecer sugestões de otimização de peptídeos",
+    "clearChat": "Limpar Chat",
+    "newSession": "Nova Sessão"
+  },
+  "hero": {
+    "greeting": "Bem-vindo ao CV-PepFind",
+    "subtitle": "Seu Parceiro Inteligente de Descoberta de Peptídeos",
+    "prompt1": "Estou pronto, vamos lá",
+    "prompt2": "Como posso ajudá-lo a encontrar peptídeos hoje?",
+    "prompt3": "Analisar sequências com precisão",
+    "prompt4": "Descobrir novos candidatos de peptídeos",
+    "prompt5": "Otimizar afinidade de ligação",
+    "getStarted": "Começar",
+    "learnMore": "Saiba Mais"
+  },
+  "settings": {
+    "title": "Configurações",
+    "general": "Geral",
+    "account": "Conta",
+    "about": "Sobre",
+    "theme": "Tema",
+    "language": "Idioma",
+    "lightMode": "Claro",
+    "darkMode": "Escuro",
+    "systemMode": "Sistema",
+    "version": "Versão",
+    "copyright": "© 2026 CV-PepFind. Todos os direitos reservados."
+  }
+}

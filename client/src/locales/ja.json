@@ -1,0 +1,79 @@
+{
+  "common": {
+    "appName": "CV-PepFind",
+    "tagline": "ペプチド発見プラットフォーム",
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "success": "成功",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "close": "閉じる"
+  },
+  "header": {
+    "history": "履歴",
+    "settings": "設定",
+    "logout": "ログアウト"
+  },
+  "leftPanel": {
+    "title": "ペプチド検索",
+    "targetProtein": "ターゲットタンパク質",
+    "targetProteinPlaceholder": "例：ACE2、EGFR、PD-1...",
+    "sequences": "配列",
+    "sequencesPlaceholder": "配列またはFASTA形式を入力",
+    "addSequence": "配列を追加",
+    "batchInput": "バッチ入力",
+    "filters": "フィルター",
+    "esmThreshold": "ESM-2閾値",
+    "confidenceThreshold": "信頼度閾値",
+    "pipelineOptions": "パイプラインオプション",
+    "enableESMFold": "ESMFoldを有効にする",
+    "enableDocking": "ドッキングを有効にする",
+    "launchPipeline": "パイプラインを起動",
+    "viewHistory": "履歴を表示"
+  },
+  "centerPanel": {
+    "structure2D": "2D構造",
+    "structure3D": "3D構造",
+    "pipeline": "パイプラインの進行状況",
+    "dockingResults": "ドッキング結果",
+    "topResults": "トップ結果",
+    "affinity": "親和性",
+    "confidence": "信頼度"
+  },
+  "rightPanel": {
+    "title": "CV-PepFind",
+    "subtitle": "ペプチド発見エージェント",
+    "greeting": "こんにちは！私はCV-PepFind、あなたのインテリジェントなペプチド発見アシスタントです。",
+    "prompt": "研究のニーズを教えてください。または下のクイックコマンドを使用して開始してください！",
+    "queryFunction": "ペプチドの機能と構造情報を照会",
+    "retrievePeptides": "データベースから関連ペプチドを取得",
+    "analyzeSequence": "配列-活性関係（SAR）を分析",
+    "optimizationSuggestions": "ペプチド最適化の提案を提供",
+    "clearChat": "チャットをクリア",
+    "newSession": "新しいセッション"
+  },
+  "hero": {
+    "greeting": "CV-PepFindへようこそ",
+    "subtitle": "あなたのインテリジェントなペプチド発見パートナー",
+    "prompt1": "準備ができました。始めましょう",
+    "prompt2": "今日はどのようにペプチドを見つけるのをお手伝いしましょうか？",
+    "prompt3": "精密に配列を分析",
+    "prompt4": "新しいペプチド候補を発見",
+    "prompt5": "結合親和性を最適化",
+    "getStarted": "始める",
+    "learnMore": "詳細を学ぶ"
+  },
+  "settings": {
+    "title": "設定",
+    "general": "一般",
+    "account": "アカウント",
+    "about": "について",
+    "theme": "テーマ",
+    "language": "言語",
+    "lightMode": "ライト",
+    "darkMode": "ダーク",
+    "systemMode": "システム",
+    "version": "バージョン",
+    "copyright": "© 2026 CV-PepFind. すべての権利を保有しています。"
+  }
+}
