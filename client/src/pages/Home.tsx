@@ -40,6 +40,12 @@ export default function Home() {
   // ════════════════════════════════════════════════════════════════════════════
   // 欢迎屏幕
   // ════════════════════════════════════════════════════════════════════════════
+  const handleQuickAction = (seq: string, target: string) => {
+    // Quick action: pre-fill the left panel and auto-submit
+    // We dispatch a custom event that PeptideQueryPanel listens to
+    window.dispatchEvent(new CustomEvent('cv-pepfind:quick-action', { detail: { seq, target } }));
+  };
+
   const WelcomeScreen = () => (
     <div className="h-full flex flex-col items-center justify-center px-4 text-center">
       <motion.div
@@ -58,44 +64,59 @@ export default function Home() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        <h2 className="text-2xl font-bold text-foreground mb-2">AI智能多肽筛选系统</h2>
-        <p className="text-sm text-muted-foreground mb-8">在虚拟环境中模拟多肽与靶点的亲和力</p>
+        <h2 className="text-2xl font-bold mb-2">
+          <span className="text-white font-light tracking-widest">CV</span><span className="text-primary font-black tracking-tight">-PepFind</span>
+        </h2>
+        <p className="text-sm text-muted-foreground mb-6">Simulate peptide-target affinity in virtual environments</p>
       </motion.div>
 
+      {/* Pipeline capability cards */}
       <motion.div
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="space-y-3 w-full max-w-xs"
+        className="flex gap-2.5 mb-8"
       >
-        <div className="p-4 rounded-xl border border-border bg-card/50">
-          <div className="flex items-center gap-3 mb-2">
-            <FlaskConical className="w-5 h-5 text-primary" />
-            <span className="font-medium text-sm">ESM-2 打分</span>
+        {[
+          { icon: <FlaskConical className="w-4 h-4" />, label: 'ESM-2', sub: 'Scoring' },
+          { icon: <Sparkles className="w-4 h-4" />, label: 'ESMFold', sub: '3D Predict' },
+          { icon: <Activity className="w-4 h-4" />, label: 'Docking', sub: 'Affinity' },
+        ].map((item) => (
+          <div key={item.label} className="flex flex-col items-center gap-1 px-4 py-3 rounded-xl border border-border/60 bg-card/30 backdrop-blur-sm">
+            <span className="text-primary">{item.icon}</span>
+            <span className="text-xs font-semibold text-foreground">{item.label}</span>
+            <span className="text-[10px] text-muted-foreground">{item.sub}</span>
           </div>
-          <p className="text-xs text-muted-foreground">序列表征与初步评估</p>
-        </div>
-
-        <div className="p-4 rounded-xl border border-border bg-card/50">
-          <div className="flex items-center gap-3 mb-2">
-            <Sparkles className="w-5 h-5 text-accent" />
-            <span className="font-medium text-sm">ESMFold 预测</span>
-          </div>
-          <p className="text-xs text-muted-foreground">3D 结构预测与可视化</p>
-        </div>
-
-        <div className="p-4 rounded-xl border border-border bg-card/50">
-          <div className="flex items-center gap-3 mb-2">
-            <Activity className="w-5 h-5 text-primary" />
-            <span className="font-medium text-sm">Docking 对接</span>
-          </div>
-          <p className="text-xs text-muted-foreground">亲和力评分与优化建议</p>
-        </div>
+        ))}
       </motion.div>
 
-      <p className="text-xs text-muted-foreground/60 mt-8">
-        {isMobile ? '在左侧输入多肽序列开始' : '在左侧输入多肽序列开始'}
-      </p>
+      {/* Quick action shortcut buttons */}
+      <motion.div
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.45 }}
+        className="w-full max-w-sm space-y-2"
+      >
+        <p className="text-[10px] text-muted-foreground/60 uppercase tracking-widest mb-3 text-center">Quick Analysis</p>
+        {[
+          { icon: <Database className="w-3.5 h-3.5" />, label: 'Analyze antimicrobial peptide ACDEFGHIK', seq: 'ACDEFGHIK', target: 'Bacterial membrane' },
+          { icon: <Eye className="w-3.5 h-3.5" />, label: 'Predict 3D structure of KWKLFKKIEK', seq: 'KWKLFKKIEK', target: 'ACE2' },
+          { icon: <MessageSquare className="w-3.5 h-3.5" />, label: 'Screen anti-cancer peptide FLPII', seq: 'FLPII', target: 'PD-1' },
+          { icon: <Sparkles className="w-3.5 h-3.5" />, label: 'Dock RGDS peptide to integrin target', seq: 'RGDS', target: 'Integrin αvβ3' },
+        ].map((action) => (
+          <button
+            key={action.label}
+            onClick={() => handleQuickAction(action.seq, action.target)}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border/50 bg-card/20 hover:bg-card/60 hover:border-primary/30 transition-all text-left group"
+          >
+            <span className="text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0">{action.icon}</span>
+            <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors truncate">{action.label}</span>
+            <ChevronRight className="w-3 h-3 text-muted-foreground/40 group-hover:text-primary/60 ml-auto flex-shrink-0 transition-colors" />
+          </button>
+        ))}
+      </motion.div>
+
+      <p className="text-[10px] text-muted-foreground/40 mt-6">Enter sequences in the left panel to begin</p>
     </div>
   );
 
@@ -115,7 +136,7 @@ export default function Home() {
               <Dna className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-foreground leading-none">AI智能多肽筛选系统</h1>
+              <h1 className="text-sm font-bold text-foreground leading-none">CV-PepFind for you</h1>
               <p className="text-[9px] text-muted-foreground leading-none mt-0.5">Peptide Screening Platform</p>
             </div>
           </div>
@@ -153,7 +174,12 @@ export default function Home() {
               <History className="w-3.5 h-3.5" />
               历史记录
             </button>
-            <button className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all">
+            {/* 设置按钮：个人信息、切换语言（8大语言）、退出登录等 */}
+            <button
+              onClick={() => setShowSettings(true)}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+              title="Settings"
+            >
               <Settings className="w-3.5 h-3.5" />
             </button>
           </div>

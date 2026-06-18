@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FlaskConical, ChevronDown, ChevronUp, Play, Plus, Trash2,
@@ -128,8 +128,24 @@ export default function PeptideQueryPanel({ onQuerySubmitted }: QueryPanelProps)
     const examples = EXAMPLE_SEQUENCES.slice(0, 3);
     setSequences(examples);
     setBatchMode(false);
-    toast.success('已加载示例序列');
+    toast.success('Example sequences loaded');
   };
+
+  // Listen for quick-action events from the welcome screen
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { seq, target } = (e as CustomEvent).detail as { seq: string; target: string };
+      setSequences([seq]);
+      setTargetProtein(target);
+      setBatchMode(false);
+      // Auto-submit after a brief delay to let state settle
+      setTimeout(() => {
+        document.getElementById('cv-pepfind-submit-btn')?.click();
+      }, 150);
+    };
+    window.addEventListener('cv-pepfind:quick-action', handler);
+    return () => window.removeEventListener('cv-pepfind:quick-action', handler);
+  }, []);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -139,7 +155,7 @@ export default function PeptideQueryPanel({ onQuerySubmitted }: QueryPanelProps)
           <Dna className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-primary`} />
         </div>
         <div className="min-w-0">
-          <h2 className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-foreground truncate`}>多肽查询</h2>
+          <h2 className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-foreground truncate`}>Find What You Want</h2>
           <p className={`${isMobile ? 'text-[8px]' : 'text-[10px]'} text-muted-foreground truncate`}>Peptide Query Panel</p>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
@@ -153,7 +169,7 @@ export default function PeptideQueryPanel({ onQuerySubmitted }: QueryPanelProps)
             onClick={loadExample}
             className={`${isMobile ? 'text-[9px] px-1.5 py-0.5' : 'text-[10px] px-2 py-1'} rounded-md bg-muted text-muted-foreground hover:text-foreground transition-all`}
           >
-            示例
+            example
           </button>
         </div>
       </div>
@@ -264,7 +280,7 @@ export default function PeptideQueryPanel({ onQuerySubmitted }: QueryPanelProps)
             className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
           >
             <Settings2 className="w-3 h-3" />
-            <span>高级筛选配置</span>
+            <span>DIY Weight</span>
             <span className="ml-auto">{showAdvanced ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}</span>
           </button>
 
@@ -374,6 +390,7 @@ export default function PeptideQueryPanel({ onQuerySubmitted }: QueryPanelProps)
       {/* Submit Button */}
       <div className="px-4 py-3 border-t border-border">
         <button
+          id="cv-pepfind-submit-btn"
           onClick={handleSubmit}
           disabled={isSubmitting}
           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed glow-primary"
