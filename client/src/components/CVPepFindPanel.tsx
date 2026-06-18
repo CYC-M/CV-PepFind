@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot, Send, Sparkles, Dna, Search, Zap, RotateCcw,
@@ -7,6 +7,8 @@ import {
 import { Streamdown } from "streamdown";
 import { nanoid } from "nanoid";
 import { trpc } from "@/lib/trpc";
+
+const CV_PEPFIND_LOGO = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663763297463/mPgk7G7EdaQz8qRWJqERFD/cv-pepfind-logo-hvWmhPWZsRMWVNLhDabEVd.webp';
 
 interface Message {
   id: string;
@@ -34,14 +36,8 @@ const GREETING = `你好！我是 **CV-PepFind**，您的专业多肽筛选智�
 请告诉我您的研究需求，或使用下方快捷指令开始！`;
 
 export default function CVPepFindPanel() {
-  // Persist sessionId across page refreshes so chat history can be restored
-  const [sessionId, setSessionId] = useState<string>(() => {
-    const saved = localStorage.getItem('cv-pepfind-session-id');
-    if (saved) return saved;
-    const fresh = nanoid();
-    localStorage.setItem('cv-pepfind-session-id', fresh);
-    return fresh;
-  });
+  // Fresh session on every login (clean workspace)
+  const [sessionId, setSessionId] = useState<string>(() => nanoid());
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -51,6 +47,7 @@ export default function CVPepFindPanel() {
       timestamp: new Date(),
     }
   ]);
+  const [aiState, setAiState] = useState<'idle' | 'processing'>('idle');
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
@@ -59,6 +56,7 @@ export default function CVPepFindPanel() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const avatarRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -66,14 +64,15 @@ export default function CVPepFindPanel() {
 
   useEffect(() => { scrollToBottom(); }, [messages]);
 
-  // Load recent sessions list
+  // Clean workspace: do NOT load historical sessions by default
+  // Users get a fresh start every time they open the app
   const { data: recentSessions } = trpc.agent.sessions.useQuery(undefined, {
     staleTime: 30_000,
+    enabled: false, // Disabled by default for clean UX
   });
 
   const switchSession = useCallback(async (sid: string) => {
     setShowSessions(false);
-    localStorage.setItem('cv-pepfind-session-id', sid);
     setSessionId(sid);
     setHistoryLoaded(false);
     setMessages([{
@@ -117,6 +116,7 @@ export default function CVPepFindPanel() {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsStreaming(true);
+    setAiState('processing');
 
     const assistantId = nanoid();
     setMessages(prev => [...prev, {
@@ -176,6 +176,7 @@ export default function CVPepFindPanel() {
       ));
     } finally {
       setIsStreaming(false);
+      setAiState('idle');
     }
   }, [isStreaming, sessionId]);
 
@@ -195,9 +196,9 @@ export default function CVPepFindPanel() {
   const clearChat = () => {
     // Generate a new session for the fresh conversation
     const newSessionId = nanoid();
-    localStorage.setItem('cv-pepfind-session-id', newSessionId);
     setSessionId(newSessionId);
     setHistoryLoaded(false);
+    setAiState('idle');
     setMessages([{
       id: 'greeting',
       role: 'assistant',
@@ -210,11 +211,19 @@ export default function CVPepFindPanel() {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border flex items-center gap-2.5">
-        <div className="relative">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center border border-primary/30">
-            <Bot className="w-4 h-4 text-primary" />
-          </div>
-          <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-background" />
+        <div
+          ref={avatarRef}
+          className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+            aiState === 'processing'
+              ? 'ai-processing'
+              : 'ai-breathing'
+          }`}
+        >
+          <img
+            src={CV_PEPFIND_LOGO}
+            alt="CV-PepFind"
+            className="w-6 h-6 object-contain"
+          />
         </div>
         <div>
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/useMobile";
 
 interface QueryPanelProps {
   onQuerySubmitted: (queryId: number, sequences: string[], options: QueryOptions) => void;
@@ -53,6 +54,7 @@ const EXAMPLE_SEQUENCES = [
 ];
 
 export default function PeptideQueryPanel({ onQuerySubmitted }: QueryPanelProps) {
+  const isMobile = useIsMobile();
   const [sequences, setSequences] = useState<string[]>(['']);
   const [batchMode, setBatchMode] = useState(false);
   const [batchText, setBatchText] = useState('');
@@ -132,24 +134,24 @@ export default function PeptideQueryPanel({ onQuerySubmitted }: QueryPanelProps)
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-border flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
-          <Dna className="w-4 h-4 text-primary" />
+      <div className={`${isMobile ? 'px-3 py-2' : 'px-4 py-3'} border-b border-border flex items-center gap-2.5`}>
+        <div className={`${isMobile ? 'w-6 h-6' : 'w-7 h-7'} rounded-lg bg-primary/15 flex items-center justify-center`}>
+          <Dna className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-primary`} />
         </div>
-        <div>
-          <h2 className="text-sm font-semibold text-foreground">多肽查询</h2>
-          <p className="text-[10px] text-muted-foreground">Peptide Query Panel</p>
+        <div className="min-w-0">
+          <h2 className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-foreground truncate`}>多肽查询</h2>
+          <p className={`${isMobile ? 'text-[8px]' : 'text-[10px]'} text-muted-foreground truncate`}>Peptide Query Panel</p>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
           <button
             onClick={() => setBatchMode(!batchMode)}
-            className={`text-[10px] px-2 py-1 rounded-md transition-all ${batchMode ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+            className={`${isMobile ? 'text-[9px] px-1.5 py-0.5' : 'text-[10px] px-2 py-1'} rounded-md transition-all ${batchMode ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
           >
             {batchMode ? '批量' : '单条'}
           </button>
           <button
             onClick={loadExample}
-            className="text-[10px] px-2 py-1 rounded-md bg-muted text-muted-foreground hover:text-foreground transition-all"
+            className={`${isMobile ? 'text-[9px] px-1.5 py-0.5' : 'text-[10px] px-2 py-1'} rounded-md bg-muted text-muted-foreground hover:text-foreground transition-all`}
           >
             示例
           </button>
@@ -157,27 +159,27 @@ export default function PeptideQueryPanel({ onQuerySubmitted }: QueryPanelProps)
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+      <div className={`flex-1 overflow-y-auto ${isMobile ? 'px-3 py-2 space-y-3' : 'px-4 py-3 space-y-4'}`}>
 
         {/* Target Protein */}
         <div>
-          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 mb-1.5">
-            <Target className="w-3 h-3" /> 靶点蛋白
+          <label className={`${isMobile ? 'text-[11px]' : 'text-xs'} font-medium text-muted-foreground flex items-center gap-1.5 mb-1`}>
+            <Target className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} /> 靶点蛋白
           </label>
           <input
             type="text"
             value={targetProtein}
             onChange={e => setTargetProtein(e.target.value)}
             placeholder="如: ACE2, EGFR, PD-1..."
-            className="w-full bg-input border border-border rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-all"
+            className={`w-full bg-input border border-border rounded-lg ${isMobile ? 'px-2 py-1.5 text-[11px]' : 'px-3 py-2 text-xs'} text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-all`}
           />
         </div>
 
         {/* Sequence Input */}
         <div>
-          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 mb-1.5">
-            <FlaskConical className="w-3 h-3" />
-            {batchMode ? 'FASTA / 批量序列' : `序列输入 (${sequences.filter(s=>s.length>=3).length}/20)`}
+          <label className={`${isMobile ? 'text-[11px]' : 'text-xs'} font-medium text-muted-foreground flex items-center gap-1.5 mb-1`}>
+            <FlaskConical className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
+            <span className="truncate">{batchMode ? 'FASTA / 批量序列' : `序列输入 (${sequences.filter(s=>s.length>=3).length}/20)`}</span>
           </label>
 
           <AnimatePresence mode="wait">
@@ -187,15 +189,15 @@ export default function PeptideQueryPanel({ onQuerySubmitted }: QueryPanelProps)
                   value={batchText}
                   onChange={e => setBatchText(e.target.value)}
                   placeholder={`>seq1\nACDEFGHIKLMNPQRSTVWY\n>seq2\nLLGDFFRKSKEKIGKEFKRI\n\n或直接每行一条序列`}
-                  rows={8}
-                  className="w-full bg-input border border-border rounded-lg px-3 py-2 text-xs font-mono text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-all resize-none"
+                  rows={isMobile ? 5 : 8}
+                  className={`w-full bg-input border border-border rounded-lg ${isMobile ? 'px-2 py-1.5 text-[10px]' : 'px-3 py-2 text-xs'} font-mono text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-all resize-none`}
                 />
-                <p className="text-[10px] text-muted-foreground mt-1">
+                <p className={`${isMobile ? 'text-[9px]' : 'text-[10px]'} text-muted-foreground mt-1`}>
                   支持FASTA格式，最多20条，长度3-50
                 </p>
               </motion.div>
             ) : (
-              <motion.div key="single" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="space-y-2">
+              <motion.div key="single" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className={isMobile ? 'space-y-1.5' : 'space-y-2'}>
                 {sequences.map((seq, idx) => {
                   const isValid = seq.length === 0 || validateAA(seq);
                   return (

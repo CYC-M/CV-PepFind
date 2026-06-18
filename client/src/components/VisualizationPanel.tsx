@@ -6,6 +6,7 @@ import Peptide3DViewer from "./Peptide3DViewer";
 import PipelineProgress, { PipelineStepData } from "./PipelineProgress";
 import DockingResults from "./DockingResults";
 import { trpc } from "@/lib/trpc";
+import { useIsMobile } from "@/hooks/useMobile";
 
 interface VisualizationPanelProps {
   queryId: number | null;
@@ -28,6 +29,7 @@ const TABS: Array<{ id: Tab; label: string; icon: React.ElementType; badge?: str
 ];
 
 export default function VisualizationPanel({ queryId, sequences, pipelineOptions }: VisualizationPanelProps) {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<Tab>('pipeline');
   const [pipelineSteps, setPipelineSteps] = useState<PipelineStepData[]>([]);
   const [currentPdbData, setCurrentPdbData] = useState<string | null>(null);

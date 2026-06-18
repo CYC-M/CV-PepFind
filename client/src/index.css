@@ -306,3 +306,70 @@
 .streamdown-content em {
   color: oklch(0.68 0.15 200);
 }
+
+
+/* ========== CV-PepFind Dynamic AI State Animations ========== */
+
+/* Breathing Light Animation (Idle State) */
+@keyframes breathing-light {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3), inset 0 0 20px rgba(16, 185, 129, 0.1);
+    opacity: 0.7;
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.6), inset 0 0 30px rgba(16, 185, 129, 0.2);
+    opacity: 1;
+  }
+}
+
+/* Fluid Wave Animation (Processing State) */
+@keyframes fluid-wave {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Morphing Organic Shape */
+@keyframes morph {
+  0%, 100% {
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  }
+  50% {
+    border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+  }
+}
+
+/* Utility classes for AI states */
+.ai-breathing {
+  animation: breathing-light 3s ease-in-out infinite;
+}
+
+.ai-processing {
+  background: linear-gradient(-45deg, #10b981, #06b6d4, #10b981, #06b6d4);
+  background-size: 400% 400%;
+  animation: fluid-wave 3s ease infinite, morph 4s ease-in-out infinite;
+}
+
+.ai-avatar-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(16, 185, 129, 0.2), transparent);
+}
+
+.ai-avatar-container.idle {
+  @apply ai-breathing;
+}
+
+.ai-avatar-container.processing {
+  @apply ai-processing;
+}
