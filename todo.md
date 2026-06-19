@@ -87,3 +87,14 @@
 ## Bug修复（新增）
 - [x] 修复 React 重复 key "" 错误（根本原因：SettingsPanel.tsx 中 AnimatePresence mode="wait" 直接包裹三个 TabsContent，导致 Radix UI 组件没有 key 传给 AnimatePresence，React 报告重复 key=""）
 - [x] 修复方案：将 AnimatePresence 移入每个 TabsContent 内部，并用条件渲染 {activeTab === 'xxx' && ...} 控制 motion.div 的显示
+
+## 多语言完整实现（新增）
+- [x] 确保所有页面文本（除CV-PepFind外）在语言切换时立即更新
+- [x] AI对话默认语言跟随系统语言设置
+- [x] 验证所有8种语言的完整翻译覆盖
+
+## 历史记录删除功能（新增）
+- [x] 为历史记录添加删除按钮
+- [x] 实现删除前确认弹窗（提示"删除后不可恢复"）
+- [x] 后端实现数据库永久删除接口
+- [x] 前端调用删除接口并刷新列表

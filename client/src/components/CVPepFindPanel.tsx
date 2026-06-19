@@ -2,11 +2,13 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot, Send, Sparkles, Dna, Search, Zap, RotateCcw,
-  ChevronDown, Loader2, User, Copy, Check,
+  ChevronDown, Loader2, User, Copy, Check, Trash2,
 } from "lucide-react";
 import { Streamdown } from "streamdown";
 import { nanoid } from "nanoid";
 import { trpc } from "@/lib/trpc";
+import { useI18n } from "@/contexts/I18nContext";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const CV_PEPFIND_LOGO = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663763297463/mPgk7G7EdaQz8qRWJqERFD/cv-pepfind-logo-hvWmhPWZsRMWVNLhDabEVd.webp';
 
@@ -18,41 +20,46 @@ interface Message {
   timestamp: Date;
 }
 
-const QUICK_PROMPTS = [
-  { icon: Search, label: "查询抗菌肽", prompt: "请列举5种常见的抗菌肽序列及其作用机制" },
-  { icon: Dna, label: "分析序列", prompt: "分析序列 LLGDFFRKSKEKIGKEFKRI 的物化性质和生物活性" },
-  { icon: Zap, label: "优化建议", prompt: "如何通过氨基酸替换来提高多肽的细胞穿透能力？" },
-  { icon: Sparkles, label: "靶向设计", prompt: "设计一条能与ACE2受体结合的多肽序列，并解释设计原理" },
-];
-
-const GREETING = `你好！我是 **CV-PepFind**，您的专业多肽筛选智能体。
-
-我可以帮您：
-- 🧬 **查询多肽功能与结构信息**
-- 🔍 **从数据库召回相关功能多肽**
-- 💡 **分析序列-活性关系（SAR）**
-- 🎯 **提供多肽优化改造建议**
-
-请告诉我您的研究需求，或使用下方快捷指令开始！`;
-
 export default function CVPepFindPanel() {
+  const { t, language } = useI18n();
+  
   // Fresh session on every login (clean workspace)
   const [sessionId, setSessionId] = useState<string>(() => nanoid());
+
+  // Generate greeting based on current language
+  const getGreeting = useCallback(() => {
+    return t('rightPanel.aiGreeting');
+  }, [t]);
 
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'greeting',
       role: 'assistant',
-      content: GREETING,
+      content: getGreeting(),
       timestamp: new Date(),
     }
   ]);
+
+  // Update greeting when language changes
+  useEffect(() => {
+    setMessages(prev => {
+      if (prev[0]?.id === 'greeting') {
+        return [
+          { ...prev[0], content: getGreeting() },
+          ...prev.slice(1)
+        ];
+      }
+      return prev;
+    });
+  }, [language, getGreeting]);
+
   const [aiState, setAiState] = useState<'idle' | 'processing'>('idle');
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showSessions, setShowSessions] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ sessionId: string; title: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -64,11 +71,10 @@ export default function CVPepFindPanel() {
 
   useEffect(() => { scrollToBottom(); }, [messages]);
 
-  // Clean workspace: do NOT load historical sessions by default
-  // Users get a fresh start every time they open the app
-  const { data: recentSessions } = trpc.agent.sessions.useQuery(undefined, {
+  // Load sessions for the dropdown
+  const { data: recentSessions, refetch: refetchSessions } = trpc.agent.sessions.useQuery(undefined, {
     staleTime: 30_000,
-    enabled: false, // Disabled by default for clean UX
+    enabled: showSessions, // Load only when dropdown is opened
   });
 
   const switchSession = useCallback(async (sid: string) => {
@@ -78,10 +84,10 @@ export default function CVPepFindPanel() {
     setMessages([{
       id: 'greeting',
       role: 'assistant',
-      content: GREETING,
+      content: getGreeting(),
       timestamp: new Date(),
     }]);
-  }, []);
+  }, [getGreeting]);
 
   // Load persisted chat history for this session on mount
   const { data: chatHistory } = trpc.agent.history.useQuery(
@@ -133,7 +139,7 @@ export default function CVPepFindPanel() {
       const res = await fetch('/api/agent/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, message: text.trim() }),
+        body: JSON.stringify({ sessionId, message: text.trim(), language }),
         signal: abortRef.current.signal,
       });
 
@@ -171,14 +177,14 @@ export default function CVPepFindPanel() {
       if ((err as Error)?.name === 'AbortError') return;
       setMessages(prev => prev.map(m =>
         m.id === assistantId
-          ? { ...m, content: '抱歉，请求出现错误，请稍后重试。', streaming: false }
+          ? { ...m, content: t('common.error'), streaming: false }
           : m
       ));
     } finally {
       setIsStreaming(false);
       setAiState('idle');
     }
-  }, [isStreaming, sessionId]);
+  }, [isStreaming, sessionId, language, t]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -202,10 +208,31 @@ export default function CVPepFindPanel() {
     setMessages([{
       id: 'greeting',
       role: 'assistant',
-      content: GREETING,
+      content: getGreeting(),
       timestamp: new Date(),
     }]);
   };
+
+  const deleteSessionMutation = trpc.agent.deleteSession.useMutation();
+
+  const deleteSession = async (sid: string) => {
+    try {
+      await deleteSessionMutation.mutateAsync({ sessionId: sid });
+      setDeleteConfirm(null);
+      // Refresh sessions list
+      await refetchSessions();
+    } catch (err) {
+      console.error('Failed to delete session:', err);
+    }
+  };
+
+  // Quick prompts with i18n
+  const QUICK_PROMPTS = [
+    { icon: Search, labelKey: 'quickPrompts.queryAntimicrobial', promptKey: 'quickPrompts.queryAntimicrobialPrompt' },
+    { icon: Dna, labelKey: 'quickPrompts.analyzeSequence', promptKey: 'quickPrompts.analyzeSequencePrompt' },
+    { icon: Zap, labelKey: 'quickPrompts.optimizationTips', promptKey: 'quickPrompts.optimizationTipsPrompt' },
+    { icon: Sparkles, labelKey: 'quickPrompts.targetedDesign', promptKey: 'quickPrompts.targetedDesignPrompt' },
+  ];
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -230,21 +257,21 @@ export default function CVPepFindPanel() {
             CV-PepFind
             <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-medium">AI</span>
           </h2>
-          <p className="text-[10px] text-muted-foreground">多肽筛选智能体</p>
+          <p className="text-[10px] text-muted-foreground">{t('rightPanel.subtitle')}</p>
         </div>
         <div className="ml-auto flex items-center gap-1 relative">
           {/* Session history dropdown */}
           <button
             onClick={() => setShowSessions(v => !v)}
             className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all flex items-center gap-1"
-            title="历史会话"
+            title={t('rightPanel.sessionHistory')}
           >
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showSessions ? 'rotate-180' : ''}`} />
           </button>
           <button
             onClick={clearChat}
             className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
-            title="新建对话"
+            title={t('rightPanel.newSession')}
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -253,25 +280,36 @@ export default function CVPepFindPanel() {
           {showSessions && (
             <div className="absolute top-full right-0 mt-1 w-56 bg-popover border border-border rounded-xl shadow-xl z-50 overflow-hidden">
               <div className="px-3 py-2 border-b border-border">
-                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">历史会话</p>
+                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{t('rightPanel.sessionHistory')}</p>
               </div>
               <div className="max-h-48 overflow-y-auto">
                 {(!recentSessions || recentSessions.length === 0) ? (
-                  <p className="px-3 py-3 text-xs text-muted-foreground text-center">暂无历史会话</p>
+                  <p className="px-3 py-3 text-xs text-muted-foreground text-center">{t('rightPanel.noSessions')}</p>
                 ) : (
                   recentSessions.filter(s => !!s.sessionId).map(s => (
-                    <button
+                    <div
                       key={s.sessionId || `session-${s.updatedAt}`}
-                      onClick={() => switchSession(s.sessionId)}
-                      className={`w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors ${
-                        s.sessionId === sessionId ? 'text-primary bg-primary/5' : 'text-foreground'
-                      }`}
+                      className="flex items-center justify-between px-3 py-2 text-xs hover:bg-muted transition-colors group"
                     >
-                      <div className="font-medium truncate">{s.title ?? '未命名会话'}</div>
-                      <div className="text-muted-foreground text-[10px] mt-0.5">
-                        {new Date(s.updatedAt).toLocaleString()}
-                      </div>
-                    </button>
+                      <button
+                        onClick={() => switchSession(s.sessionId)}
+                        className={`flex-1 text-left ${
+                          s.sessionId === sessionId ? 'text-primary' : 'text-foreground'
+                        }`}
+                      >
+                        <div className="font-medium truncate">{s.title ?? 'Untitled Session'}</div>
+                        <div className="text-muted-foreground text-[10px] mt-0.5">
+                          {new Date(s.updatedAt).toLocaleString()}
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirm({ sessionId: s.sessionId, title: s.title ?? 'Untitled' })}
+                        className="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
+                        title={t('rightPanel.deleteSession')}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
                   ))
                 )}
               </div>
@@ -333,7 +371,7 @@ export default function CVPepFindPanel() {
                   )}
                 </div>
                 <span className="text-[9px] text-muted-foreground/50 px-1">
-                  {msg.timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+                  {msg.timestamp.toLocaleTimeString(language === 'zh' ? 'zh-CN' : language, { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
             </motion.div>
@@ -369,13 +407,13 @@ export default function CVPepFindPanel() {
         <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {QUICK_PROMPTS.map((qp) => (
             <button
-              key={qp.label}
-              onClick={() => sendMessage(qp.prompt)}
+              key={qp.labelKey}
+              onClick={() => sendMessage(t(qp.promptKey))}
               disabled={isStreaming}
               className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground text-[10px] font-medium transition-all disabled:opacity-50 border border-transparent hover:border-border"
             >
               <qp.icon className="w-3 h-3" />
-              {qp.label}
+              {t(qp.labelKey)}
             </button>
           ))}
         </div>
@@ -389,7 +427,7 @@ export default function CVPepFindPanel() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="输入生物学指令或多肽查询... (Enter发送)"
+            placeholder={t('rightPanel.inputPlaceholder')}
             rows={1}
             disabled={isStreaming}
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none min-h-[20px] max-h-[100px] leading-5"
@@ -410,10 +448,26 @@ export default function CVPepFindPanel() {
               : <Send className="w-3.5 h-3.5" />}
           </button>
         </div>
-        <p className="text-[9px] text-muted-foreground/40 text-center mt-1.5">
-          CV-PepFind · 由大语言模型驱动 · 结果仅供参考
-        </p>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogTitle>{t('rightPanel.deleteConfirmTitle')}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t('rightPanel.deleteConfirmMessage')}
+          </AlertDialogDescription>
+          <div className="flex gap-3 justify-end">
+            <AlertDialogCancel>{t('rightPanel.deleteCancelButton')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteConfirm && deleteSession(deleteConfirm.sessionId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t('rightPanel.deleteConfirmButton')}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

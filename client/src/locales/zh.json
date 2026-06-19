@@ -50,7 +50,16 @@
     "analyzeSequence": "分析序列-活性关系（SAR）",
     "optimizationSuggestions": "提供多肽优化改造建议",
     "clearChat": "清空对话",
-    "newSession": "新建会话"
+    "newSession": "新建会话",
+    "aiGreeting": "你好！我是 **CV-PepFind**，您的专业多肽筛选智能体。\n\n我可以帮您：\n- 🧬 **查询多肽功能与结构信息**\n- 🔍 **从数据库召回相关功能多肽**\n- 💡 **分析序列-活性关系（SAR）**\n- 🎯 **提供多肽优化改造建议**\n\n请告诉我您的研究需求，或使用下方快捷指令开始！",
+    "inputPlaceholder": "输入生物学指令或多肽查询... (Enter发送)",
+    "noSessions": "暂无历史会话",
+    "sessionHistory": "历史会话",
+    "deleteSession": "删除",
+    "deleteConfirmTitle": "删除会话",
+    "deleteConfirmMessage": "确定要删除此会话吗？删除后无法恢复。",
+    "deleteConfirmButton": "删除",
+    "deleteCancelButton": "取消"
   },
   "hero": {
     "greeting": "欢迎使用CV-PepFind",
@@ -75,5 +84,15 @@
     "systemMode": "系统",
     "version": "版本",
     "copyright": "© 2026 CV-PepFind. 保留所有权利。"
+  },
+  "quickPrompts": {
+    "queryAntimicrobial": "查询抗菌肽",
+    "queryAntimicrobialPrompt": "请列举5种常见的抗菌肽序列及其作用机制",
+    "analyzeSequence": "分析序列",
+    "analyzeSequencePrompt": "分析序列 LLGDFFRKSKEKIGKEFKRI 的物化性质和生物活性",
+    "optimizationTips": "优化建议",
+    "optimizationTipsPrompt": "如何通过氨基酸替换来提高多肽的细胞穿透能力？",
+    "targetedDesign": "靶向设计",
+    "targetedDesignPrompt": "设计一条能与ACE2受体结合的多肽序列，并解释设计原理"
   }
 }

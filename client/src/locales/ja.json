@@ -50,7 +50,16 @@
     "analyzeSequence": "配列-活性関係（SAR）を分析",
     "optimizationSuggestions": "ペプチド最適化の提案を提供",
     "clearChat": "チャットをクリア",
-    "newSession": "新しいセッション"
+    "newSession": "新しいセッション",
+    "aiGreeting": "こんにちは！私は**CV-PepFind**、あなたのプロフェッショナルなペプチド選別AIエージェントです。\n\n私があなたを手伝うことができます：\n- 🧬 **ペプチドの機能と構造情報をクエリする**\n- 🔍 **データベースから関連ペプチドを取得する**\n- 💡 **配列-活性関係（SAR）を分析する**\n- 🎯 **ペプチド最適化の提案を提供する**\n\nあなたの研究ニーズを教えてください、または下のクイックコマンドを使用してください！",
+    "inputPlaceholder": "生物学的指示またはペプチドクエリを入力... (Enterで送信)",
+    "noSessions": "セッション履歴がありません",
+    "sessionHistory": "セッション履歴",
+    "deleteSession": "削除",
+    "deleteConfirmTitle": "セッションを削除",
+    "deleteConfirmMessage": "このセッションを削除してもよろしいですか？この操作は取り消せません。",
+    "deleteConfirmButton": "削除",
+    "deleteCancelButton": "キャンセル"
   },
   "hero": {
     "greeting": "CV-PepFindへようこそ",
@@ -75,5 +84,15 @@
     "systemMode": "システム",
     "version": "バージョン",
     "copyright": "© 2026 CV-PepFind. すべての権利を保有しています。"
+  },
+  "quickPrompts": {
+    "queryAntimicrobial": "抗菌ペプチドをクエリ",
+    "queryAntimicrobialPrompt": "5つの一般的な抗菌ペプチド配列とそれらの作用メカニズムをリストアップしてください",
+    "analyzeSequence": "配列を分析",
+    "analyzeSequencePrompt": "配列LLGDFFRKSKEKIGKEFKRI の物理化学的性質と生物活性を分析してください",
+    "optimizationTips": "最適化のヒント",
+    "optimizationTipsPrompt": "アミノ酸置換によってペプチドの細胞透過能をどのように改善できますか？",
+    "targetedDesign": "標的設計",
+    "targetedDesignPrompt": "ACE2受体に結合できるペプチド配列を設計し、設計原理を説明してください"
   }
 }

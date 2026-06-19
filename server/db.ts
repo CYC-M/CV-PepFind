@@ -228,3 +228,18 @@ export async function getRecentChatSessions(userId?: number, limit = 10) {
     .limit(limit);
   return rows.filter(r => !!r.sessionId && r.sessionId.trim().length > 0);
 }
+
+export async function deleteChatSession(sessionId: string) {
+  const db = await getDb();
+  if (!db) return false;
+  try {
+    // Delete all messages in this session first
+    await db.delete(chatMessages).where(eq(chatMessages.sessionId, sessionId));
+    // Then delete the session
+    await db.delete(chatSessions).where(eq(chatSessions.sessionId, sessionId));
+    return true;
+  } catch (error) {
+    console.error('[Database] Failed to delete chat session:', error);
+    return false;
+  }
+}

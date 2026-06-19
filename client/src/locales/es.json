@@ -50,16 +50,16 @@
     "analyzeSequence": "Analizar relaciones secuencia-actividad (SAR)",
     "optimizationSuggestions": "Proporcionar sugerencias de optimización de péptidos",
     "clearChat": "Limpiar Chat",
-    "newSession": "Nueva Sesión"
-  },
-  "centerPanel": {
-    "structure2D": "Estructura 2D",
-    "structure3D": "Estructura 3D",
-    "pipeline": "Progreso de Canalización",
-    "dockingResults": "Resultados de Acoplamiento",
-    "topResults": "Resultados Principales",
-    "affinity": "Afinidad",
-    "confidence": "Confianza"
+    "newSession": "Nueva Sesión",
+    "aiGreeting": "¡Hola! Soy **CV-PepFind**, tu agente inteligente de selección de péptidos.\n\nPuedo ayudarte:\n- 🧬 **Consultar información de función y estructura de péptidos**\n- 🔍 **Recuperar péptidos relacionados de la base de datos**\n- 💡 **Analizar relaciones estructura-actividad (SAR)**\n- 🎯 **Proporcionar sugerencias de optimización de péptidos**\n\n¡Cuéntame tus necesidades de investigación o usa los comandos rápidos a continuación!",
+    "inputPlaceholder": "Ingresa instrucciones biológicas o consultas de péptidos... (Enter para enviar)",
+    "noSessions": "Sin historial de sesiones",
+    "sessionHistory": "Historial de sesiones",
+    "deleteSession": "Eliminar",
+    "deleteConfirmTitle": "Eliminar sesión",
+    "deleteConfirmMessage": "¿Estás seguro de que deseas eliminar esta sesión? Esta acción no se puede deshacer.",
+    "deleteConfirmButton": "Eliminar",
+    "deleteCancelButton": "Cancelar"
   },
   "hero": {
     "greeting": "Bienvenido a CV-PepFind",
@@ -84,5 +84,15 @@
     "systemMode": "Sistema",
     "version": "Versión",
     "copyright": "© 2026 CV-PepFind. Todos los derechos reservados."
+  },
+  "quickPrompts": {
+    "queryAntimicrobial": "Consultar péptidos antimicrobianos",
+    "queryAntimicrobialPrompt": "Enumera 5 secuencias comunes de péptidos antimicrobianos y sus mecanismos de acción",
+    "analyzeSequence": "Analizar secuencia",
+    "analyzeSequencePrompt": "Analiza las propiedades fisicoquímicas y la actividad biológica de la secuencia LLGDFFRKSKEKIGKEFKRI",
+    "optimizationTips": "Consejos de optimización",
+    "optimizationTipsPrompt": "¿Cómo pueden las sustituciones de aminoácidos mejorar la capacidad de penetración celular de los péptidos?",
+    "targetedDesign": "Diseño dirigido",
+    "targetedDesignPrompt": "Diseña una secuencia de péptido que pueda unirse al receptor ACE2 y explica los principios de diseño"
   }
 }

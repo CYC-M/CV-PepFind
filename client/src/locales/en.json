@@ -50,7 +50,16 @@
     "analyzeSequence": "Analyze sequence-activity relationships (SAR)",
     "optimizationSuggestions": "Provide peptide optimization suggestions",
     "clearChat": "Clear Chat",
-    "newSession": "New Session"
+    "newSession": "New Session",
+    "aiGreeting": "Hello! I'm **CV-PepFind**, your professional peptide screening AI agent.\n\nI can help you:\n- 🧬 **Query peptide function & structure information**\n- 🔍 **Retrieve related peptides from database**\n- 💡 **Analyze sequence-activity relationships (SAR)**\n- 🎯 **Provide peptide optimization suggestions**\n\nPlease tell me your research needs, or use the quick commands below to get started!",
+    "inputPlaceholder": "Enter biological instructions or peptide queries... (Enter to send)",
+    "noSessions": "No session history",
+    "sessionHistory": "Session History",
+    "deleteSession": "Delete",
+    "deleteConfirmTitle": "Delete Session",
+    "deleteConfirmMessage": "Are you sure you want to delete this session? This action cannot be undone.",
+    "deleteConfirmButton": "Delete",
+    "deleteCancelButton": "Cancel"
   },
   "hero": {
     "greeting": "Welcome to CV-PepFind",
@@ -75,5 +84,15 @@
     "systemMode": "System",
     "version": "Version",
     "copyright": "© 2026 CV-PepFind. All rights reserved."
+  },
+  "quickPrompts": {
+    "queryAntimicrobial": "Query Antimicrobial Peptides",
+    "queryAntimicrobialPrompt": "List 5 common antimicrobial peptide sequences and their mechanisms of action",
+    "analyzeSequence": "Analyze Sequence",
+    "analyzeSequencePrompt": "Analyze the physicochemical properties and biological activity of the sequence LLGDFFRKSKEKIGKEFKRI",
+    "optimizationTips": "Optimization Tips",
+    "optimizationTipsPrompt": "How can amino acid substitutions improve peptide cell penetration ability?",
+    "targetedDesign": "Targeted Design",
+    "targetedDesignPrompt": "Design a peptide sequence that can bind to ACE2 receptor and explain the design principles"
   }
 }

@@ -50,7 +50,16 @@
     "analyzeSequence": "Analisar relações sequência-atividade (SAR)",
     "optimizationSuggestions": "Fornecer sugestões de otimização de peptídeos",
     "clearChat": "Limpar Chat",
-    "newSession": "Nova Sessão"
+    "newSession": "Nova Sessão",
+    "aiGreeting": "Olá! Sou **CV-PepFind**, seu agente inteligente de triagem de peptídeos.\n\nPosso ajudá-lo:\n- 🧬 **Consultar informações de função e estrutura de peptídeos**\n- 🔍 **Recuperar peptídeos relacionados do banco de dados**\n- 💡 **Analisar relações estrutura-atividade (SAR)**\n- 🎯 **Fornecer sugestões de otimização de peptídeos**\n\nDiga-me suas necessidades de pesquisa ou use os comandos rápidos abaixo!",
+    "inputPlaceholder": "Digite instruções biológicas ou consultas de peptídeos... (Enter para enviar)",
+    "noSessions": "Sem histórico de sessão",
+    "sessionHistory": "Histórico de sessões",
+    "deleteSession": "Excluir",
+    "deleteConfirmTitle": "Excluir sessão",
+    "deleteConfirmMessage": "Tem certeza de que deseja excluir esta sessão? Esta ação não pode ser desfeita.",
+    "deleteConfirmButton": "Excluir",
+    "deleteCancelButton": "Cancelar"
   },
   "hero": {
     "greeting": "Bem-vindo ao CV-PepFind",
@@ -75,5 +84,15 @@
     "systemMode": "Sistema",
     "version": "Versão",
     "copyright": "© 2026 CV-PepFind. Todos os direitos reservados."
+  },
+  "quickPrompts": {
+    "queryAntimicrobial": "Consultar peptídeos antimicrobianos",
+    "queryAntimicrobialPrompt": "Liste 5 sequências comuns de peptídeos antimicrobianos e seus mecanismos de ação",
+    "analyzeSequence": "Analisar sequência",
+    "analyzeSequencePrompt": "Analise as propriedades físico-químicas e a atividade biológica da sequência LLGDFFRKSKEKIGKEFKRI",
+    "optimizationTips": "Dicas de otimização",
+    "optimizationTipsPrompt": "Como as substituições de aminoácidos podem melhorar a capacidade de penetração celular dos peptídeos?",
+    "targetedDesign": "Design direcionado",
+    "targetedDesignPrompt": "Projete uma sequência de peptídeo que possa se ligar ao receptor ACE2 e explique os princípios de design"
   }
 }

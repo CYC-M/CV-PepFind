@@ -50,7 +50,16 @@
     "analyzeSequence": "Analyser les relations séquence-activité (SAR)",
     "optimizationSuggestions": "Fournir des suggestions d'optimisation de peptides",
     "clearChat": "Effacer le Chat",
-    "newSession": "Nouvelle Session"
+    "newSession": "Nouvelle Session",
+    "aiGreeting": "Bonjour! Je suis **CV-PepFind**, votre agent intelligent de sélection de peptides.\n\nJe peux vous aider:\n- 🧬 **Interroger les informations de fonction et de structure des peptides**\n- 🔍 **Récupérer les peptides connexes de la base de données**\n- 💡 **Analyser les relations structure-activité (SAR)**\n- 🎯 **Fournir des suggestions d'optimisation des peptides**\n\nDites-moi vos besoins de recherche ou utilisez les commandes rapides ci-dessous!",
+    "inputPlaceholder": "Entrez des instructions biologiques ou des requêtes de peptides... (Entrée pour envoyer)",
+    "noSessions": "Aucun historique de session",
+    "sessionHistory": "Historique des sessions",
+    "deleteSession": "Supprimer",
+    "deleteConfirmTitle": "Supprimer la session",
+    "deleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer cette session? Cette action ne peut pas être annulée.",
+    "deleteConfirmButton": "Supprimer",
+    "deleteCancelButton": "Annuler"
   },
   "hero": {
     "greeting": "Bienvenue sur CV-PepFind",
@@ -75,5 +84,15 @@
     "systemMode": "Système",
     "version": "Version",
     "copyright": "© 2026 CV-PepFind. Tous droits réservés."
+  },
+  "quickPrompts": {
+    "queryAntimicrobial": "Interroger les peptides antimicrobiens",
+    "queryAntimicrobialPrompt": "Énumérez 5 séquences courantes de peptides antimicrobiens et leurs mécanismes d'action",
+    "analyzeSequence": "Analyser la séquence",
+    "analyzeSequencePrompt": "Analysez les propriétés physicochimiques et l'activité biologique de la séquence LLGDFFRKSKEKIGKEFKRI",
+    "optimizationTips": "Conseils d'optimisation",
+    "optimizationTipsPrompt": "Comment les substitutions d'acides aminés peuvent-elles améliorer la capacité de pénétration cellulaire des peptides?",
+    "targetedDesign": "Conception ciblée",
+    "targetedDesignPrompt": "Concevez une séquence de peptide capable de se lier au récepteur ACE2 et expliquez les principes de conception"
   }
 }

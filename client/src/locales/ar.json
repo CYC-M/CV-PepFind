@@ -50,7 +50,16 @@
     "analyzeSequence": "تحليل العلاقات بين التسلسل والنشاط (SAR)",
     "optimizationSuggestions": "تقديم اقتراحات تحسين الببتيدات",
     "clearChat": "مسح الدردشة",
-    "newSession": "جلسة جديدة"
+    "newSession": "جلسة جديدة",
+    "aiGreeting": "مرحبا! أنا **CV-PepFind**، وكيل الفحص الذكي للببتيدات.\n\nيمكنني مساعدتك:\n- 🧬 **الاستعلام عن معلومات الوظيفة والهيكل للببتيدات**\n- 🔍 **استرجاع الببتيدات ذات الصلة من قاعدة البيانات**\n- 💡 **تحليل علاقات التسلسل والنشاط (SAR)**\n- 🎯 **تقديم اقتراحات تحسين الببتيدات**\n\nأخبرني باحتياجاتك البحثية أو استخدم الأوامر السريعة أدناه!",
+    "inputPlaceholder": "أدخل تعليمات بيولوجية أو استعلامات ببتيد... (Enter للإرسال)",
+    "noSessions": "لا يوجد سجل جلسات",
+    "sessionHistory": "سجل الجلسات",
+    "deleteSession": "حذف",
+    "deleteConfirmTitle": "حذف الجلسة",
+    "deleteConfirmMessage": "هل أنت متأكد من رغبتك في حذف هذه الجلسة؟ لا يمكن التراجع عن هذا الإجراء.",
+    "deleteConfirmButton": "حذف",
+    "deleteCancelButton": "إلغاء"
   },
   "hero": {
     "greeting": "مرحبا بك في CV-PepFind",
@@ -75,5 +84,15 @@
     "systemMode": "النظام",
     "version": "الإصدار",
     "copyright": "© 2026 CV-PepFind. جميع الحقوق محفوظة."
+  },
+  "quickPrompts": {
+    "queryAntimicrobial": "الاستعلام عن الببتيدات المضادة للميكروبات",
+    "queryAntimicrobialPrompt": "اذكر 5 تسلسلات شائعة من الببتيدات المضادة للميكروبات وآليات عملها",
+    "analyzeSequence": "تحليل التسلسل",
+    "analyzeSequencePrompt": "حلل الخصائص الفيزيوكيميائية والنشاط البيولوجي للتسلسل LLGDFFRKSKEKIGKEFKRI",
+    "optimizationTips": "نصائح التحسين",
+    "optimizationTipsPrompt": "كيف يمكن لاستبدالات الأحماض الأمينية تحسين قدرة الببتيدات على اختراق الخلايا؟",
+    "targetedDesign": "التصميم الموجه",
+    "targetedDesignPrompt": "صمم تسلسل ببتيد يمكنه الارتباط بمستقبل ACE2 واشرح مبادئ التصميم"
   }
 }
