@@ -8,6 +8,7 @@ import { Streamdown } from "streamdown";
 import { nanoid } from "nanoid";
 import { trpc } from "@/lib/trpc";
 import { useI18n } from "@/contexts/I18nContext";
+import { useAgent } from "@/contexts/AgentContext";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const CV_PEPFIND_LOGO = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663763297463/mPgk7G7EdaQz8qRWJqERFD/cv-pepfind-logo-hvWmhPWZsRMWVNLhDabEVd.webp';
@@ -22,6 +23,7 @@ interface Message {
 
 export default function CVPepFindPanel() {
   const { t, language } = useI18n();
+  const { handleToolCall } = useAgent();
   
   // Fresh session on every login (clean workspace)
   const [sessionId, setSessionId] = useState<string>(() => nanoid());
@@ -162,6 +164,9 @@ export default function CVPepFindPanel() {
                 setMessages(prev => prev.map(m =>
                   m.id === assistantId ? { ...m, content: accumulated } : m
                 ));
+              } else if (parsed.type === 'tool_call' && parsed.tool) {
+                // AI 触发系统控制指令 → 更新可视化面板
+                handleToolCall(parsed.tool, parsed.args || {});
               } else if (parsed.type === 'done' || parsed.type === 'error') {
                 break;
               }

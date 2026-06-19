@@ -1,0 +1,512 @@
+/**
+ * AIVisualizationPanel — AI 驱动的动态分子可视化面板
+ *
+ * 响应 AgentContext 的状态变化，展示：
+ * - 空闲状态：欢迎动画
+ * - molecule_3d：3D 分子结构（3Dmol.js）
+ * - docking_anim：对接动画（多肽趋近/结合/稳定）
+ * - docking_result：筛选结果卡片列表
+ * - pipeline：Pipeline 进度
+ */
+import { useEffect, useRef, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Atom, Dna, Zap, Trophy, Activity, ChevronRight, Sparkles, Target, FlaskConical } from "lucide-react";
+import { useAgent, type DockingCandidate } from "@/contexts/AgentContext";
+
+// ─── 3Dmol.js 类型声明 ────────────────────────────────────────────────────────
+interface Mol3DViewer {
+  addModel: (data: string, format: string) => void;
+  setStyle: (sel: Record<string, unknown>, style: Record<string, unknown>) => void;
+  zoomTo: () => void;
+  render: () => void;
+  spin?: (axis: string, speed: number) => void;
+  stopAnimate?: () => void;
+  clear: () => void;
+  removeAllModels?: () => void;
+  addSphere?: (spec: Record<string, unknown>) => void;
+  setBackgroundColor?: (color: string) => void;
+}
+interface Mol3DLib {
+  createViewer: (element: HTMLElement, config: Record<string, unknown>) => Mol3DViewer;
+}
+
+// ─── 3Dmol 脚本加载 ───────────────────────────────────────────────────────────
+let molScriptLoaded = false;
+let molScriptLoading = false;
+const molScriptCallbacks: Array<() => void> = [];
+
+function get3Dmol(): Mol3DLib | undefined {
+  return (window as unknown as Record<string, unknown>)['$3Dmol'] as Mol3DLib | undefined;
+}
+
+function load3DmolScript(callback: () => void) {
+  if (molScriptLoaded) { callback(); return; }
+  molScriptCallbacks.push(callback);
+  if (molScriptLoading) return;
+  molScriptLoading = true;
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.1.0/3Dmol-min.js';
+  script.onload = () => {
+    molScriptLoaded = true;
+    molScriptCallbacks.forEach(cb => cb());
+    molScriptCallbacks.length = 0;
+  };
+  document.head.appendChild(script);
+}
+
+// ─── Idle Welcome Animation ───────────────────────────────────────────────────
+function IdleState() {
+  const particles = Array.from({ length: 20 }, (_, i) => i);
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-6 relative overflow-hidden">
+      {/* Background particles */}
+      {particles.map(i => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 rounded-full bg-primary/30"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            y: [0, -30, 0],
+            opacity: [0.2, 0.8, 0.2],
+            scale: [1, 1.5, 1],
+          }}
+          transition={{
+            duration: 3 + Math.random() * 2,
+            repeat: Infinity,
+            delay: Math.random() * 3,
+            ease: 'easeInOut',
+          }}
+        />
+      ))}
+
+      {/* Central molecule icon */}
+      <motion.div
+        className="relative"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+      >
+        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30 flex items-center justify-center">
+          <Atom className="w-12 h-12 text-primary/60" />
+        </div>
+        {/* Orbiting dots */}
+        {[0, 120, 240].map((deg, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-3 h-3 rounded-full bg-primary/50"
+            style={{
+              top: '50%',
+              left: '50%',
+              transform: `rotate(${deg}deg) translateX(48px) translateY(-50%)`,
+            }}
+            animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity, delay: i * 0.7 }}
+          />
+        ))}
+      </motion.div>
+
+      <div className="text-center z-10">
+        <h3 className="text-lg font-semibold text-foreground/80 mb-2">AI 分子可视化</h3>
+        <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
+          与右侧 AI 对话，描述您的研究需求。<br />
+          AI 将自动在此处渲染分子结构与对接动画。
+        </p>
+      </div>
+
+      {/* Feature hints */}
+      <div className="flex gap-3 z-10">
+        {[
+          { icon: Dna, label: '3D 结构' },
+          { icon: Target, label: '对接筛选' },
+          { icon: Trophy, label: '结果分析' },
+        ].map(({ icon: Icon, label }) => (
+          <div key={label} className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl bg-card/50 border border-border/50">
+            <Icon className="w-4 h-4 text-primary/60" />
+            <span className="text-[10px] text-muted-foreground">{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Molecule 3D Viewer ───────────────────────────────────────────────────────
+function MoleculeViewer({ pdbData, name, sequence }: { pdbData: string | null; name: string | null; sequence?: string }) {
+  const viewerRef = useRef<HTMLDivElement>(null);
+  const viewer3DRef = useRef<Mol3DViewer | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  const initViewer = useCallback(() => {
+    const mol3d = get3Dmol();
+    if (!viewerRef.current || !mol3d) return;
+    if (viewer3DRef.current) {
+      viewer3DRef.current.clear();
+    }
+    const viewer = mol3d.createViewer(viewerRef.current, {
+      backgroundColor: 'transparent',
+    });
+    viewer3DRef.current = viewer;
+
+    if (pdbData) {
+      viewer.addModel(pdbData, 'pdb');
+      viewer.setStyle({}, {
+        cartoon: { color: 'spectrum', opacity: 0.9 },
+        stick: { radius: 0.15, colorscheme: 'greenCarbon' },
+      });
+    } else if (sequence) {
+      // Show sequence as sphere representation (placeholder)
+      const residues = sequence.split('');
+      residues.forEach((_, i) => {
+        viewer.addSphere?.({
+          center: { x: i * 3.8 - (residues.length * 1.9), y: Math.sin(i * 0.5) * 5, z: Math.cos(i * 0.3) * 3 },
+          radius: 1.2,
+          color: `hsl(${(i / residues.length) * 240}, 70%, 60%)`,
+        });
+      });
+    }
+
+    viewer.zoomTo();
+    viewer.spin?.('y', 0.5);
+    viewer.render();
+    setLoaded(true);
+  }, [pdbData, sequence]);
+
+  useEffect(() => {
+    load3DmolScript(() => {
+      setTimeout(initViewer, 100);
+    });
+    return () => {
+      viewer3DRef.current?.stopAnimate?.();
+    };
+  }, [initViewer]);
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50">
+        <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
+          <Atom className="w-4 h-4 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">{name || 'Molecule'}</h3>
+          {sequence && (
+            <p className="text-[10px] text-muted-foreground font-mono truncate max-w-[200px]">{sequence}</p>
+          )}
+        </div>
+        {loaded && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="ml-auto flex items-center gap-1.5 text-xs text-primary bg-primary/10 px-2 py-1 rounded-full"
+          >
+            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+            3D 渲染中
+          </motion.div>
+        )}
+      </div>
+
+      {/* 3D Viewer */}
+      <div className="flex-1 relative">
+        {!loaded && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+            >
+              <Atom className="w-8 h-8 text-primary/50" />
+            </motion.div>
+          </div>
+        )}
+        <div ref={viewerRef} className="w-full h-full" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Docking Animation ────────────────────────────────────────────────────────
+function DockingAnimation({ target, sequences, phase }: {
+  target: string;
+  sequences: string[];
+  phase: 'approach' | 'binding' | 'bound' | null;
+}) {
+  const phaseConfig = {
+    approach: { label: '多肽趋近靶点...', color: 'text-accent', progress: 30 },
+    binding: { label: '构象优化中...', color: 'text-primary', progress: 65 },
+    bound: { label: '稳定结合完成', color: 'text-green-400', progress: 100 },
+  };
+  const cfg = phase ? phaseConfig[phase] : phaseConfig.approach;
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50">
+        <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center">
+          <Zap className="w-4 h-4 text-accent animate-pulse" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">分子对接筛选</h3>
+          <p className="text-[10px] text-muted-foreground">靶点: {target} · {sequences.length} 条候选序列</p>
+        </div>
+      </div>
+
+      {/* Animation Canvas */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6 relative overflow-hidden">
+        {/* Background grid */}
+        <div className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: 'linear-gradient(rgba(var(--primary-rgb, 0,255,128), 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--primary-rgb, 0,255,128), 0.3) 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+          }}
+        />
+
+        {/* Target protein (center) */}
+        <div className="relative">
+          <motion.div
+            className="w-32 h-32 rounded-full border-2 border-primary/40 bg-primary/5 flex items-center justify-center"
+            animate={{
+              boxShadow: phase === 'bound'
+                ? ['0 0 20px rgba(0,255,128,0.3)', '0 0 40px rgba(0,255,128,0.5)', '0 0 20px rgba(0,255,128,0.3)']
+                : ['0 0 10px rgba(0,255,128,0.1)', '0 0 20px rgba(0,255,128,0.2)', '0 0 10px rgba(0,255,128,0.1)'],
+            }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <div className="text-center">
+              <Target className="w-8 h-8 text-primary/60 mx-auto mb-1" />
+              <span className="text-xs text-primary/80 font-mono">{target}</span>
+            </div>
+          </motion.div>
+
+          {/* Orbiting peptide candidates */}
+          {sequences.slice(0, 3).map((seq, i) => {
+            const angle = (i / 3) * 360;
+            const radius = phase === 'approach' ? 100 : phase === 'binding' ? 70 : 55;
+            return (
+              <motion.div
+                key={i}
+                className="absolute w-10 h-10 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center"
+                style={{
+                  top: '50%',
+                  left: '50%',
+                }}
+                animate={{
+                  x: Math.cos((angle + (phase === 'approach' ? 0 : 30)) * Math.PI / 180) * radius - 20,
+                  y: Math.sin((angle + (phase === 'approach' ? 0 : 30)) * Math.PI / 180) * radius - 20,
+                  scale: phase === 'bound' ? 1.2 : 1,
+                  opacity: phase === 'bound' ? 1 : 0.7,
+                }}
+                transition={{ duration: 1.5, ease: 'easeInOut' }}
+              >
+                <Dna className="w-4 h-4 text-accent" />
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Phase indicator */}
+        <div className="w-full max-w-xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
+            <span className="text-xs text-muted-foreground">{cfg.progress}%</span>
+          </div>
+          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
+              animate={{ width: `${cfg.progress}%` }}
+              transition={{ duration: 1, ease: 'easeOut' }}
+            />
+          </div>
+        </div>
+
+        {/* Phase steps */}
+        <div className="flex gap-4">
+          {(['approach', 'binding', 'bound'] as const).map((p, i) => (
+            <div key={p} className="flex items-center gap-1.5">
+              <div className={`w-2 h-2 rounded-full transition-colors ${
+                phase === p ? 'bg-primary animate-pulse' :
+                (phase === 'binding' && i === 0) || (phase === 'bound' && i < 2) ? 'bg-primary/60' :
+                'bg-muted-foreground/30'
+              }`} />
+              <span className="text-[10px] text-muted-foreground capitalize">{p}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Docking Results ──────────────────────────────────────────────────────────
+function DockingResultsView({ candidates, selected, onSelect }: {
+  candidates: DockingCandidate[];
+  selected: number | null;
+  onSelect: (i: number) => void;
+}) {
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50">
+        <div className="w-8 h-8 rounded-lg bg-yellow-500/15 flex items-center justify-center">
+          <Trophy className="w-4 h-4 text-yellow-400" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">筛选结果</h3>
+          <p className="text-[10px] text-muted-foreground">找到 {candidates.length} 个候选多肽</p>
+        </div>
+      </div>
+
+      {/* Candidates list */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        {candidates.map((c, i) => (
+          <motion.button
+            key={i}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.1 }}
+            onClick={() => onSelect(i)}
+            className={`w-full text-left p-3 rounded-xl border transition-all ${
+              selected === i
+                ? 'border-primary/60 bg-primary/10'
+                : 'border-border/50 bg-card/50 hover:border-primary/30 hover:bg-primary/5'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                  i === 0 ? 'bg-yellow-500/20 text-yellow-400' :
+                  i === 1 ? 'bg-slate-400/20 text-slate-300' :
+                  i === 2 ? 'bg-orange-500/20 text-orange-400' :
+                  'bg-muted text-muted-foreground'
+                }`}>
+                  {c.rank}
+                </div>
+                <span className="text-xs font-medium text-foreground">候选 #{c.rank}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-muted-foreground">ΔG</span>
+                <span className={`text-xs font-mono font-semibold ${
+                  c.score < -9 ? 'text-green-400' :
+                  c.score < -7 ? 'text-primary' :
+                  'text-accent'
+                }`}>{c.score.toFixed(1)}</span>
+                <span className="text-[9px] text-muted-foreground">kcal/mol</span>
+              </div>
+            </div>
+
+            <p className="text-[10px] font-mono text-muted-foreground truncate mb-1.5">{c.sequence}</p>
+
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">{c.activity}</span>
+              <div className="flex items-center gap-1">
+                <div className="h-1 w-12 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full"
+                    style={{ width: `${c.confidence * 100}%` }}
+                  />
+                </div>
+                <span className="text-[9px] text-muted-foreground">{(c.confidence * 100).toFixed(0)}%</span>
+              </div>
+            </div>
+          </motion.button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+export default function AIVisualizationPanel() {
+  const { vizState, dispatch } = useAgent();
+
+  return (
+    <div className="h-full bg-background relative overflow-hidden">
+      {/* Status bar */}
+      <AnimatePresence>
+        {vizState.statusMessage && vizState.mode !== 'idle' && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-card/90 backdrop-blur-sm border border-border/60 rounded-full px-3 py-1.5 shadow-lg"
+          >
+            <Activity className="w-3 h-3 text-primary animate-pulse" />
+            <span className="text-[11px] text-foreground/80">{vizState.statusMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main content */}
+      <AnimatePresence mode="wait">
+        {(vizState.mode as string) === 'idle' && (
+          <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
+            <IdleState />
+          </motion.div>
+        )}
+
+        {vizState.mode === 'molecule_3d' && (
+          <motion.div key="molecule" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="h-full">
+            <MoleculeViewer
+              pdbData={vizState.pdbData}
+              name={vizState.moleculeName}
+              sequence={vizState.sequences[0]}
+            />
+          </motion.div>
+        )}
+
+        {vizState.mode === 'docking_anim' && (
+          <motion.div key="docking-anim" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
+            <DockingAnimation
+              target={vizState.targetProtein || ''}
+              sequences={vizState.sequences}
+              phase={vizState.animationPhase}
+            />
+          </motion.div>
+        )}
+
+        {vizState.mode === 'docking_result' && (
+          <motion.div key="docking-result" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="h-full">
+            <DockingResultsView
+              candidates={vizState.dockingCandidates}
+              selected={vizState.selectedCandidate}
+              onSelect={(i) => dispatch({ type: 'SELECT_CANDIDATE', index: i })}
+            />
+          </motion.div>
+        )}
+
+        {vizState.mode === 'loading' && (
+          <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
+                <FlaskConical className="w-10 h-10 text-primary/60" />
+              </motion.div>
+              <p className="text-sm text-muted-foreground">{vizState.statusMessage || '处理中...'}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mode indicator (bottom right) */}
+      {(vizState.mode as string) !== 'idle' && (
+        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-card/80 backdrop-blur-sm border border-border/40 rounded-full px-2.5 py-1">
+          <Sparkles className="w-3 h-3 text-primary/60" />
+          <span className="text-[10px] text-muted-foreground capitalize">
+            {vizState.mode === 'molecule_3d' ? '3D 结构' :
+             vizState.mode === 'docking_anim' ? '对接动画' :
+             vizState.mode === 'docking_result' ? '筛选结果' :
+             vizState.mode}
+          </span>
+          {(vizState.mode as string) !== 'idle' && (
+            <button
+              onClick={() => dispatch({ type: 'RESET' })}
+              className="ml-1 text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+              title="重置"
+            >
+              <ChevronRight className="w-3 h-3 rotate-180" />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

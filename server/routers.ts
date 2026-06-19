@@ -156,9 +156,32 @@ export const appRouter = router({
 
 export type AppRouter = typeof appRouter;
 
-// ─── CV-PepFind System Prompts (Multi-language) ──────────────────────────────
+// ─── CV-PepFind System Prompts (Multi-language, with Tool-Call System Control) ─────────
+const TOOL_CALL_INSTRUCTIONS = [
+  '## System Control Instructions (IMPORTANT)',
+  '',
+  'You have direct control over the frontend visualization panel.',
+  'When you need to update the visualization, embed the following format in your reply:',
+  '',
+  '~~~tool_call',
+  '{"tool": "<tool_name>", "args": {<args>}}',
+  '~~~',
+  '',
+  'Available tools:',
+  '- show_molecule: Show 3D molecular structure. args: {name, sequence, pdb_data(optional)}',
+  '- start_docking: Start docking animation. args: {target, sequences: string[], query_id}',
+  '- update_animation: Update animation phase. args: {phase: "approach"|"binding"|"bound"}',
+  '- show_docking_results: Show screening results. args: {candidates: [{rank, sequence, score, confidence, activity}]}',
+  '- set_status: Set status message. args: {message}',
+  '',
+  'Example: When user asks about LL-37 peptide, embed in reply:',
+  '~~~tool_call',
+  '{"tool": "show_molecule", "args": {"name": "LL-37", "sequence": "LLGDFFRKSKEKIGKEFKRIVQRIKDFLRNLVPRTES"}}',
+  '~~~',
+].join('\n');
+
 const SYSTEM_PROMPTS: Record<string, string> = {
-  zh: `你是 CV-PepFind，一个专业的AI多肽筛选智能体，由先进的生物信息学模型驱动。
+  zh: `你是 CV-PepFind，一个专业的AI多肽筛选智能体，由先进的生物信息学模型驱动。你拥有对前端可视化面板的直接控制权。
 
 ## 你的核心能力：
 
@@ -308,7 +331,8 @@ Sempre ajude os usuários com profissionalismo e amabilidade.`,
 };
 
 function getSystemPromptForLanguage(language: string): string {
-  return SYSTEM_PROMPTS[language] || SYSTEM_PROMPTS['en'];
+  const base = SYSTEM_PROMPTS[language] || SYSTEM_PROMPTS['en'];
+  return base + '\n\n' + TOOL_CALL_INSTRUCTIONS;
 }
 
 const CV_PЕПFIND_SYSTEM_PROMPT = SYSTEM_PROMPTS['zh'];
@@ -421,6 +445,36 @@ export function registerAgentSSE(app: Express) {
       const reader = llmRes.body?.getReader();
       const decoder = new TextDecoder();
 
+      // Buffer for detecting tool_call blocks across chunks
+      let toolCallBuffer = '';
+      let inToolCall = false;
+
+      const flushToolCalls = (text: string) => {
+        // Extract and emit ~~~tool_call ... ~~~ blocks
+        const toolCallRegex = /~~~tool_call\n([\s\S]*?)\n~~~/g;
+        let match;
+        let lastIndex = 0;
+        const cleanText: string[] = [];
+
+        while ((match = toolCallRegex.exec(text)) !== null) {
+          // Text before the tool_call block
+          if (match.index > lastIndex) {
+            cleanText.push(text.slice(lastIndex, match.index));
+          }
+          // Parse and emit tool_call event
+          try {
+            const parsed = JSON.parse(match[1].trim());
+            if (!finished && !res.writableEnded) {
+              res.write(`data: ${JSON.stringify({ type: 'tool_call', tool: parsed.tool, args: parsed.args })}\n\n`);
+            }
+          } catch { /* skip malformed tool_call */ }
+          lastIndex = match.index + match[0].length;
+        }
+        // Remaining text after last tool_call
+        cleanText.push(text.slice(lastIndex));
+        return cleanText.join('');
+      };
+
       if (reader) {
         while (!finished) {
           const { done, value } = await reader.read();
@@ -435,14 +489,39 @@ export function registerAgentSSE(app: Express) {
               const delta = parsed.choices?.[0]?.delta?.content;
               if (delta) {
                 fullContent += delta;
-                if (!finished && !res.writableEnded) {
-                  res.write(`data: ${JSON.stringify({ type: 'delta', content: delta })}\n\n`);
+                toolCallBuffer += delta;
+
+                // Check if buffer contains a complete tool_call block
+                if (toolCallBuffer.includes('~~~tool_call') && toolCallBuffer.includes('\n~~~')) {
+                  const clean = flushToolCalls(toolCallBuffer);
+                  toolCallBuffer = '';
+                  inToolCall = false;
+                  if (clean && !finished && !res.writableEnded) {
+                    res.write(`data: ${JSON.stringify({ type: 'delta', content: clean })}\n\n`);
+                  }
+                } else if (!toolCallBuffer.includes('~~~tool_call')) {
+                  // No tool_call in buffer, safe to emit
+                  if (!finished && !res.writableEnded) {
+                    res.write(`data: ${JSON.stringify({ type: 'delta', content: toolCallBuffer })}\n\n`);
+                  }
+                  toolCallBuffer = '';
+                } else {
+                  inToolCall = true; // Accumulating tool_call block
                 }
               }
             } catch { /* skip malformed chunks */ }
           }
         }
+        // Flush any remaining buffer
+        if (toolCallBuffer && !finished && !res.writableEnded) {
+          const clean = flushToolCalls(toolCallBuffer);
+          if (clean) {
+            res.write(`data: ${JSON.stringify({ type: 'delta', content: clean })}\n\n`);
+          }
+        }
       }
+      // suppress unused variable warning
+      void inToolCall;
 
       // Save complete message
       if (fullContent) {

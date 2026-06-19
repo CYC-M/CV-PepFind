@@ -103,3 +103,13 @@
 - [x] 修复首页标题长度（42 字符，在 30-60 范围内）
 - [x] 添加 meta 描述（138 字符，在 50-160 范围内）
 - [x] 添加关键词（peptide screening, AI drug discovery, molecular docking 等）
+
+## AI对话驱动架构重构（已完成）
+- [x] 建立 AgentContext：共享 vizState（当前分子/对接状态）供 AI 控制可视化
+- [x] 后端 /api/agent/stream 支持意图解析并返回结构化 tool_call 指令
+- [x] 创建 AIVisualizationPanel：AI 驱动的动态分子面板（响应 AgentContext 控制）
+- [x] 添加对接动画：筛选过程中展示多肽在靶点口袋中的动态结合过程
+- [x] 升级 CVPepFindPanel：AI 可自主触发 tool_call 并控制可视化展示
+- [x] 重构 Home.tsx 为双栏布局（左侧全屏可视化 + 右侧 AI 对话）
+- [x] 移除独立的 PeptideQueryPanel 左侧面板（改为 AI 对话驱动）
+- [x] 筛选结果以卡片形式在可视化面板展示，支持点击查看 3D 结构
