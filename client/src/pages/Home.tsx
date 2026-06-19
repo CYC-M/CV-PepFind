@@ -67,7 +67,8 @@ export default function Home() {
         <h2 className="text-2xl font-bold mb-2">
           <span className="text-white font-light tracking-widest">CV</span><span className="text-primary font-black tracking-tight">-PepFind</span>
         </h2>
-        <p className="text-sm text-muted-foreground mb-6">Simulate peptide-target affinity in virtual environments</p>
+        <p className="text-sm text-muted-foreground mb-6">AI-powered peptide screening platform for molecular docking and bioactivity prediction</p>
+        <p className="text-xs text-muted-foreground/70 mb-6 hidden">Peptide analysis, drug discovery, structure prediction, ESMFold, binding affinity simulation</p>
       </motion.div>
 
       {/* Pipeline capability cards */}
