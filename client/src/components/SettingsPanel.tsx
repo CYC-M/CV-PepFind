@@ -124,8 +124,23 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
                     transition={{ duration: 0.2 }}
                     className="space-y-4"
                   >
+                    <div className="p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                      <p className="text-sm font-medium text-emerald-400">Account Features</p>
+                      <p className="text-xs text-foreground/60 mt-2">Sign in to sync your research data across devices, save favorite peptides, and access advanced analysis tools.</p>
+                    </div>
                     <div className="p-4 rounded-lg bg-background border border-border/30">
-                      <p className="text-sm text-foreground/60">{t('settings.account')} - Coming soon</p>
+                      <p className="text-sm font-medium text-foreground/80 mb-2">Email Subscription</p>
+                      <p className="text-xs text-foreground/60 mb-3">Get updates on new features and research insights.</p>
+                      <div className="flex gap-2">
+                        <input
+                          type="email"
+                          placeholder="your@email.com"
+                          className="flex-1 px-3 py-1.5 rounded bg-background border border-border/30 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                        <button className="px-3 py-1.5 rounded bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors">
+                          Subscribe
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 )}

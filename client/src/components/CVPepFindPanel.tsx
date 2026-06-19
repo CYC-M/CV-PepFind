@@ -160,10 +160,16 @@ export default function CVPepFindPanel() {
             try {
               const parsed = JSON.parse(jsonStr);
               if (parsed.type === 'delta' && parsed.content) {
-                accumulated += parsed.content;
-                setMessages(prev => prev.map(m =>
-                  m.id === assistantId ? { ...m, content: accumulated } : m
-                ));
+                // P0 修复：过滤掉 tool_call JSON 块，不插入 DOM
+                const filtered = parsed.content
+                  .replace(/\{\s*"tool"\s*:\s*"[^"]*"[^}]*\}/g, '')
+                  .trim();
+                if (filtered) {
+                  accumulated += filtered;
+                  setMessages(prev => prev.map(m =>
+                    m.id === assistantId ? { ...m, content: accumulated } : m
+                  ));
+                }
               } else if (parsed.type === 'tool_call' && parsed.tool) {
                 // AI 触发系统控制指令 → 更新可视化面板
                 handleToolCall(parsed.tool, parsed.args || {});
@@ -270,6 +276,7 @@ export default function CVPepFindPanel() {
             onClick={() => setShowSessions(v => !v)}
             className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all flex items-center gap-1"
             title={t('rightPanel.sessionHistory')}
+            aria-label="Session History"
           >
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showSessions ? 'rotate-180' : ''}`} />
           </button>
@@ -277,6 +284,7 @@ export default function CVPepFindPanel() {
             onClick={clearChat}
             className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
             title={t('rightPanel.newSession')}
+            aria-label="New Session"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -311,6 +319,7 @@ export default function CVPepFindPanel() {
                         onClick={() => setDeleteConfirm({ sessionId: s.sessionId, title: s.title ?? 'Untitled' })}
                         className="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
                         title={t('rightPanel.deleteSession')}
+                        aria-label="Delete session"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -353,14 +362,14 @@ export default function CVPepFindPanel() {
                     : 'bg-card border border-border rounded-tl-sm'
                 }`}>
                   {msg.role === 'assistant' ? (
-                    <div className="streamdown-content">
+                    <div className="streamdown-content" role="article" aria-label="AI assistant response">
                       <Streamdown>{msg.content}</Streamdown>
                       {msg.streaming && (
-                        <span className="inline-block w-0.5 h-3.5 bg-primary ml-0.5 animate-blink" />
+                        <span className="inline-block w-0.5 h-3.5 bg-primary ml-0.5 animate-blink" aria-hidden="true" />
                       )}
                     </div>
                   ) : (
-                    <p className="text-sm">{msg.content}</p>
+                    <p className="text-sm" role="article" aria-label="Your message">{msg.content}</p>
                   )}
 
                   {/* Copy button */}
@@ -368,6 +377,7 @@ export default function CVPepFindPanel() {
                     <button
                       onClick={() => copyMessage(msg.id, msg.content)}
                       className="absolute top-1.5 right-1.5 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 text-muted-foreground hover:text-foreground"
+                      aria-label="Copy message"
                     >
                       {copiedId === msg.id
                         ? <Check className="w-2.5 h-2.5 text-primary" />
@@ -376,7 +386,13 @@ export default function CVPepFindPanel() {
                   )}
                 </div>
                 <span className="text-[9px] text-muted-foreground/50 px-1">
-                  {msg.timestamp.toLocaleTimeString(language === 'zh' ? 'zh-CN' : language, { hour: '2-digit', minute: '2-digit' })}
+                  {new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : language, {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                  }).format(msg.timestamp)}
                 </span>
               </div>
             </motion.div>
@@ -435,6 +451,7 @@ export default function CVPepFindPanel() {
             placeholder={t('rightPanel.inputPlaceholder')}
             rows={1}
             disabled={isStreaming}
+            aria-label="Enter biological instructions or peptide query"
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none min-h-[20px] max-h-[100px] leading-5"
             style={{ height: 'auto' }}
             onInput={e => {
@@ -447,6 +464,7 @@ export default function CVPepFindPanel() {
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || isStreaming}
             className="flex-shrink-0 w-7 h-7 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label="Send message"
           >
             {isStreaming
               ? <Loader2 className="w-3.5 h-3.5 animate-spin" />

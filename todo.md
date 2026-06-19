@@ -113,3 +113,25 @@
 - [x] 重构 Home.tsx 为双栏布局（左侧全屏可视化 + 右侧 AI 对话）
 - [x] 移除独立的 PeptideQueryPanel 左侧面板（改为 AI 对话驱动）
 - [x] 筛选结果以卡片形式在可视化面板展示，支持点击查看 3D 结构
+
+## CV-PepFind 优化任务（新增）
+
+### P0 - 严重问题
+- [x] P0: tool_call JSON 泄露到无障碍树 - 流式解析时过滤 tool_call 文本，不插入 DOM
+
+### P1 - 高优先级
+- [x] P1-1: 中英文混用不一致 - i18n 框架已完全配置，所有8种语言已支持
+- [ ] P1-2: 会话历史首次打开显示空 - 添加 loading 状态，乐观更新
+- [ ] P1-3: 所有会话均为 Untitled Session - 支持重命名，自动提取标题，添加搜索
+
+### P2 - 中优先级
+- [ ] P2-1: 可视化页面功能卡片不可交互 - 添加 role/tabindex/click 事件或"Coming Soon"标识
+- [ ] P2-2: AI 回复无加载/流式指示器 - 实现 SSE 流式输出，显示加载提示
+- [x] P2-3: 时间戳格式不规范 - 用 Intl.DateTimeFormat 统一格式
+- [x] P2-4: Account 标签页仅显示"Coming soon" - 添加功能说明和邮箱订阅
+- [ ] P2-5: Logo 和 favicon 加载失败 - 检查 CDN 配置，添加本地 fallback
+
+### P3 - 低优先级
+- [x] P3-1: viewport 设 maximum-scale=1 阻止缩放 - 移除该限制，添加 favicon 和 apple-touch-icon
+- [x] P3-2: 6 个按钮缺少 aria-label - 为所有图标按钮添加 aria-label
+- [x] P3-3: 会话删除无确认对话框 - 删除确认对话已实现
