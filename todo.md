@@ -126,7 +126,7 @@
 
 ### P2 - 中优先级
 - [x] P2-1: 可视化页面功能卡片不可交互 - 添加 Coming Soon 标识、hover 效果
-- [ ] P2-2: AI 回复无加载/流式指示器 - 实现 SSE 流式输出，显示加载提示
+- [x] P2-2: AI 回复无加载/流式指示器 - 实现了流式加载指示器、会话历史 loading skeleton、重命名 UI
 - [x] P2-3: 时间戳格式不规范 - 用 Intl.DateTimeFormat 统一格式
 - [x] P2-4: Account 标签页仅显示"Coming soon" - 添加功能说明和邮箱订阅
 - [x] P2-5: Logo 和 favicon 加载失败 - 已添加 favicon.ico 和 apple-touch-icon.png
