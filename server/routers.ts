@@ -8,7 +8,7 @@ import {
   createPeptideQuery, updateQueryStatus,
   initPipelineSteps, getPipelineSteps, getQueryHistory,
   getPeptideQuery, getDockingResults, getStructurePredictions, getEsmScores,
-  upsertChatSession, saveChatMessage, getChatHistory, getRecentChatSessions, deleteChatSession,
+  upsertChatSession, saveChatMessage, getChatHistory, getRecentChatSessions, deleteChatSession, updateSessionTitleIfEmpty,
 } from "./db";
 import { runPipeline, validateSequence } from "./pipeline";
 import { invokeLLM } from "./_core/llm";
@@ -414,6 +414,8 @@ export function registerAgentSSE(app: Express) {
 
       await upsertChatSession(cleanSessionId, agentUserId);
       await saveChatMessage({ sessionId: cleanSessionId, role: "user", content: message });
+      // Auto-generate title from first message if not set
+      await updateSessionTitleIfEmpty(cleanSessionId);
 
       const history = await getChatHistory(cleanSessionId, 20);
       const messages = history.map(m => ({ role: m.role as "user" | "assistant", content: m.content }));

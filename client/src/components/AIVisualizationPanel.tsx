@@ -122,10 +122,28 @@ function IdleState() {
           { icon: Target, label: '对接筛选' },
           { icon: Trophy, label: '结果分析' },
         ].map(({ icon: Icon, label }) => (
-          <div key={label} className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl bg-card/50 border border-border/50">
-            <Icon className="w-4 h-4 text-primary/60" />
-            <span className="text-[10px] text-muted-foreground">{label}</span>
-          </div>
+          <button
+            key={label}
+            onClick={() => {
+              const msg = `Feature "${label}" coming soon.`;
+              console.log(msg);
+            }}
+            className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl bg-card/50 border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group relative"
+            role="button"
+            tabIndex={0}
+            aria-label={`${label} - Coming Soon`}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const msg = `Feature "${label}" coming soon.`;
+                console.log(msg);
+              }
+            }}
+          >
+            <Icon className="w-4 h-4 text-primary/60 group-hover:text-primary transition-colors" />
+            <span className="text-[10px] text-muted-foreground group-hover:text-foreground transition-colors">{label}</span>
+            <span className="absolute -top-6 left-1/2 -translate-x-1/2 px-2 py-1 rounded bg-background border border-border text-[9px] text-muted-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Coming Soon</span>
+          </button>
         ))}
       </div>
     </div>

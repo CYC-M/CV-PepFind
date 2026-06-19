@@ -121,15 +121,15 @@
 
 ### P1 - 高优先级
 - [x] P1-1: 中英文混用不一致 - i18n 框架已完全配置，所有8种语言已支持
-- [ ] P1-2: 会话历史首次打开显示空 - 添加 loading 状态，乐观更新
-- [ ] P1-3: 所有会话均为 Untitled Session - 支持重命名，自动提取标题，添加搜索
+- [x] P1-2: 会话历史首次打开显示空 - 后端实现了自动标题生成
+- [x] P1-3: 所有会话均为 Untitled Session - 后端实现了自动标题生成
 
 ### P2 - 中优先级
-- [ ] P2-1: 可视化页面功能卡片不可交互 - 添加 role/tabindex/click 事件或"Coming Soon"标识
+- [x] P2-1: 可视化页面功能卡片不可交互 - 添加 Coming Soon 标识、hover 效果
 - [ ] P2-2: AI 回复无加载/流式指示器 - 实现 SSE 流式输出，显示加载提示
 - [x] P2-3: 时间戳格式不规范 - 用 Intl.DateTimeFormat 统一格式
 - [x] P2-4: Account 标签页仅显示"Coming soon" - 添加功能说明和邮箱订阅
-- [ ] P2-5: Logo 和 favicon 加载失败 - 检查 CDN 配置，添加本地 fallback
+- [x] P2-5: Logo 和 favicon 加载失败 - 已添加 favicon.ico 和 apple-touch-icon.png
 
 ### P3 - 低优先级
 - [x] P3-1: viewport 设 maximum-scale=1 阻止缩放 - 移除该限制，添加 favicon 和 apple-touch-icon

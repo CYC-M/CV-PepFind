@@ -243,3 +243,43 @@ export async function deleteChatSession(sessionId: string) {
     return false;
   }
 }
+
+// Generate title from first message (extract keywords)
+export async function generateTitleFromFirstMessage(sessionId: string): Promise<string | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const firstMsg = await db.select().from(chatMessages)
+    .where(eq(chatMessages.sessionId, sessionId))
+    .orderBy(chatMessages.createdAt)
+    .limit(1);
+  
+  if (!firstMsg || firstMsg.length === 0) return null;
+  
+  const content = firstMsg[0].content;
+  // Extract first 50 characters, remove special characters
+  const title = content
+    .replace(/[^\w\s\u4e00-\u9fff]/g, '')
+    .substring(0, 50)
+    .trim();
+  
+  return title || null;
+}
+
+// Update session title if empty
+export async function updateSessionTitleIfEmpty(sessionId: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  
+  const session = await db.select().from(chatSessions)
+    .where(eq(chatSessions.sessionId, sessionId))
+    .limit(1);
+  
+  if (!session || session.length === 0 || session[0].title) return;
+  
+  const newTitle = await generateTitleFromFirstMessage(sessionId);
+  if (newTitle) {
+    await db.update(chatSessions)
+      .set({ title: newTitle })
+      .where(eq(chatSessions.sessionId, sessionId));
+  }
+}
