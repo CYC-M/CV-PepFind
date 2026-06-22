@@ -41,6 +41,13 @@
 - [x] auth.logout测试（1个用例）
 - [x] 全部15个测试通过
 
+## PDB 结构数据库集成（新增）
+- [x] 后端：新建 server/pdbRetrieval.ts，封装 RCSB PDB GraphQL 搜索 + PDB 文件下载
+- [x] 后端：新增 tRPC 端点 agent.fetchPdbStructure（按名称/序列查 PDB ID + 下载 PDB 文件）
+- [x] 前端：AgentContext 中 show_molecule tool_call 触发时自动调用后端获取真实 PDB 数据
+- [x] 前端：AIVisualizationPanel 使用真实 PDB 数据渲染 3Dmol.js，显示数据来源标注
+- [x] 测试：新增 pdbRetrieval 单元测试（20个用例全部通过）
+
 ## 待改进项（后续迭代）
 - [x] 实现真实多肽资料库检索/召回链路（UniProt REST API集成，RAG增强，11个单元测试全部通过）
 - [x] CV-PepFind前端增加历史会话列表与恢复能力

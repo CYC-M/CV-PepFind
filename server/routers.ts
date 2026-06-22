@@ -12,6 +12,7 @@ import {
 } from "./db";
 import { runPipeline, validateSequence } from "./pipeline";
 import { retrievePeptidesFromUniProt, searchPeptidesBySequence, formatRetrievalResultsForLLM } from "./peptideRetrieval";
+import { lookupPdbStructure, lookupPdbById, searchPdbIdsBySequence, fetchPdbMetadata, fetchPdbFile } from "./pdbRetrieval";
 import { invokeLLM } from "./_core/llm";
 import type { Request, Response } from "express";
 import type { Express } from "express";
@@ -178,6 +179,42 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const result = await searchPeptidesBySequence(input.sequence, input.limit);
         return result;
+      }),
+
+    // Fetch real PDB structure from RCSB by name/description or sequence
+    fetchPdbStructure: publicProcedure
+      .input(z.object({
+        query: z.string().min(1).max(500),
+        pdbId: z.string().length(4).optional(),
+        /** If true, treat query as an amino acid sequence for sequence-based search */
+        isSequence: z.boolean().optional().default(false),
+      }))
+      .query(async ({ input }) => {
+        // Direct PDB ID lookup
+        if (input.pdbId) {
+          return lookupPdbById(input.pdbId);
+        }
+        // Sequence-based search
+        if (input.isSequence) {
+          const retrievedAt = new Date().toISOString();
+          try {
+            const pdbIds = await searchPdbIdsBySequence(input.query, 5);
+            if (pdbIds.length === 0) {
+              return { query: input.query, entry: null, pdbFileContent: null, isRealData: false, source: 'RCSB PDB', retrievedAt, error: 'No matching structures found for sequence' };
+            }
+            for (const pdbId of pdbIds) {
+              const [metadata, pdbFile] = await Promise.all([fetchPdbMetadata(pdbId), fetchPdbFile(pdbId)]);
+              if (pdbFile) {
+                return { query: input.query, entry: metadata, pdbFileContent: pdbFile, isRealData: true, source: `RCSB PDB (${pdbId})`, retrievedAt };
+              }
+            }
+            return { query: input.query, entry: null, pdbFileContent: null, isRealData: false, source: 'RCSB PDB', retrievedAt, error: 'PDB file download failed' };
+          } catch (err) {
+            return { query: input.query, entry: null, pdbFileContent: null, isRealData: false, source: 'RCSB PDB', retrievedAt, error: err instanceof Error ? err.message : 'Unknown error' };
+          }
+        }
+        // Default: name/description text search
+        return lookupPdbStructure(input.query);
       }),
   }),
 });
