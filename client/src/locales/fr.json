@@ -59,7 +59,14 @@
     "deleteConfirmTitle": "Supprimer la session",
     "deleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer cette session? Cette action ne peut pas être annulée.",
     "deleteConfirmButton": "Supprimer",
-    "deleteCancelButton": "Annuler"
+    "deleteCancelButton": "Annuler",
+    "aiProcessing": "L'IA analyse...",
+    "copyMessage": "Copier le message",
+    "copiedToClipboard": "Copié dans le presse-papiers",
+    "exportScreenshot": "Exporter capture",
+    "exportChat": "Exporter la conversation",
+    "renameSession": "Renommer la session",
+    "enterNewTitle": "Entrez un nouveau titre"
   },
   "hero": {
     "greeting": "Bienvenue sur CV-PepFind",

@@ -10,6 +10,7 @@ import { trpc } from "@/lib/trpc";
 import { useI18n } from "@/contexts/I18nContext";
 import { useAgent } from "@/contexts/AgentContext";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const CV_PEPFIND_LOGO = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663763297463/mPgk7G7EdaQz8qRWJqERFD/cv-pepfind-logo-hvWmhPWZsRMWVNLhDabEVd.webp';
 
@@ -74,10 +75,10 @@ export default function CVPepFindPanel() {
 
   useEffect(() => { scrollToBottom(); }, [messages]);
 
-  // Load sessions for the dropdown
+  // Load sessions - always enabled so data is ready when dropdown opens
   const { data: recentSessions, refetch: refetchSessions } = trpc.agent.sessions.useQuery(undefined, {
     staleTime: 30_000,
-    enabled: showSessions, // Load only when dropdown is opened
+    // Always fetch so data is ready on first open; staleTime prevents excessive refetching
   });
 
   const switchSession = useCallback(async (sid: string) => {
@@ -208,9 +209,14 @@ export default function CVPepFindPanel() {
   };
 
   const copyMessage = async (id: string, content: string) => {
-    await navigator.clipboard.writeText(content);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+      toast.success(t('rightPanel.messageCopied') || '已复制到剪贴板', { duration: 1500 });
+    } catch {
+      toast.error(t('rightPanel.copyFailed') || '复制失败，请重试');
+    }
   };
 
   const clearChat = () => {

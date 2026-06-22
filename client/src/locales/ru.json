@@ -59,7 +59,14 @@
     "deleteConfirmTitle": "Удалить сеанс",
     "deleteConfirmMessage": "Вы уверены, что хотите удалить этот сеанс? Это действие невозможно отменить.",
     "deleteConfirmButton": "Удалить",
-    "deleteCancelButton": "Отмена"
+    "deleteCancelButton": "Отмена",
+    "aiProcessing": "ИИ анализирует...",
+    "copyMessage": "Копировать сообщение",
+    "copiedToClipboard": "Скопировано в буфер обмена",
+    "exportScreenshot": "Экспорт скриншота",
+    "exportChat": "Экспорт чата",
+    "renameSession": "Переименовать сессию",
+    "enterNewTitle": "Введите новый заголовок"
   },
   "hero": {
     "greeting": "Добро пожаловать в CV-PepFind",

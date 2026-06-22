@@ -59,7 +59,14 @@
     "deleteConfirmTitle": "حذف الجلسة",
     "deleteConfirmMessage": "هل أنت متأكد من رغبتك في حذف هذه الجلسة؟ لا يمكن التراجع عن هذا الإجراء.",
     "deleteConfirmButton": "حذف",
-    "deleteCancelButton": "إلغاء"
+    "deleteCancelButton": "إلغاء",
+    "aiProcessing": "الذكاء الاصطناعي يحلل...",
+    "copyMessage": "نسخ الرسالة",
+    "copiedToClipboard": "تم النسخ إلى الحافظة",
+    "exportScreenshot": "تصدير لقطة الشاشة",
+    "exportChat": "تصدير المحادثة",
+    "renameSession": "إعادة تسمية الجلسة",
+    "enterNewTitle": "أدخل عنواناً جديداً"
   },
   "hero": {
     "greeting": "مرحبا بك في CV-PepFind",

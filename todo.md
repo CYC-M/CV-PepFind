@@ -135,3 +135,22 @@
 - [x] P3-1: viewport 设 maximum-scale=1 阻止缩放 - 移除该限制，添加 favicon 和 apple-touch-icon
 - [x] P3-2: 6 个按钮缺少 aria-label - 为所有图标按钮添加 aria-label
 - [x] P3-3: 会话删除无确认对话框 - 删除确认对话已实现
+
+## 1.md 文档修复任务（已完成）
+
+### 高优先级
+- [x] 修复 i18n 键名暴露：补充 rightPanel.aiProcessing 等缺失翻译（所有8种语言已更新）
+- [x] 修复 tool_call JSON 泄露（过滤逻辑已在流式解析中实现）
+- [x] 修复 3D 可视化加载失败：WebGL 降级处理，超时提示
+
+### 中优先级
+- [x] 可视化卡片添加 Coming Soon 标识和 hover 效果
+- [x] 修复 Session History 首次点击无响应（改为始终启用查询）
+
+### 低优先级
+- [x] 复制消息添加 Toast 反馈（成功/失败提示）
+- [x] 添加"导出截图"按钮（右上角常驻 + 模式指示栏内，支持 html2canvas）
+- [x] AI 加载状态旋转动画+文字提示
+- [ ] 快速命令按钮添加图标（后续迭代）
+- [ ] 肽段序列等宽字体显示（后续迭代）
+- [ ] 对话导出功能（Markdown格式）（后续迭代）

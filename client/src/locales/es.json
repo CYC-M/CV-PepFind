@@ -59,7 +59,14 @@
     "deleteConfirmTitle": "Eliminar sesión",
     "deleteConfirmMessage": "¿Estás seguro de que deseas eliminar esta sesión? Esta acción no se puede deshacer.",
     "deleteConfirmButton": "Eliminar",
-    "deleteCancelButton": "Cancelar"
+    "deleteCancelButton": "Cancelar",
+    "aiProcessing": "La IA está analizando...",
+    "copyMessage": "Copiar mensaje",
+    "copiedToClipboard": "Copiado al portapapeles",
+    "exportScreenshot": "Exportar captura",
+    "exportChat": "Exportar chat",
+    "renameSession": "Renombrar sesión",
+    "enterNewTitle": "Ingrese nuevo título"
   },
   "hero": {
     "greeting": "Bienvenido a CV-PepFind",

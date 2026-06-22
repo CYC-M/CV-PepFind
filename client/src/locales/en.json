@@ -59,7 +59,14 @@
     "deleteConfirmTitle": "Delete Session",
     "deleteConfirmMessage": "Are you sure you want to delete this session? This action cannot be undone.",
     "deleteConfirmButton": "Delete",
-    "deleteCancelButton": "Cancel"
+    "deleteCancelButton": "Cancel",
+    "aiProcessing": "AI is analyzing...",
+    "copyMessage": "Copy message",
+    "copiedToClipboard": "Copied to clipboard",
+    "exportScreenshot": "Export Screenshot",
+    "exportChat": "Export Chat",
+    "renameSession": "Rename Session",
+    "enterNewTitle": "Enter new title"
   },
   "hero": {
     "greeting": "Welcome to CV-PepFind",

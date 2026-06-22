@@ -10,8 +10,9 @@
  */
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Atom, Dna, Zap, Trophy, Activity, ChevronRight, Sparkles, Target, FlaskConical } from "lucide-react";
+import { Atom, Dna, Zap, Trophy, Activity, ChevronRight, Sparkles, Target, FlaskConical, Camera, Check } from "lucide-react";
 import { useAgent, type DockingCandidate } from "@/contexts/AgentContext";
+import { toast } from "sonner";
 
 // ─── 3Dmol.js 类型声明 ────────────────────────────────────────────────────────
 interface Mol3DViewer {
@@ -150,55 +151,111 @@ function IdleState() {
   );
 }
 
+// ─── WebGL Support Check ──────────────────────────────────────────────────────
+function checkWebGLSupport(): boolean {
+  try {
+    const canvas = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext &&
+      (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+  } catch {
+    return false;
+  }
+}
+
 // ─── Molecule 3D Viewer ───────────────────────────────────────────────────────
 function MoleculeViewer({ pdbData, name, sequence }: { pdbData: string | null; name: string | null; sequence?: string }) {
   const viewerRef = useRef<HTMLDivElement>(null);
   const viewer3DRef = useRef<Mol3DViewer | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [webglSupported] = useState(() => checkWebGLSupport());
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const initViewer = useCallback(() => {
+    if (!webglSupported) {
+      setError('no_webgl');
+      return;
+    }
     const mol3d = get3Dmol();
     if (!viewerRef.current || !mol3d) return;
-    if (viewer3DRef.current) {
-      viewer3DRef.current.clear();
-    }
-    const viewer = mol3d.createViewer(viewerRef.current, {
-      backgroundColor: 'transparent',
-    });
-    viewer3DRef.current = viewer;
-
-    if (pdbData) {
-      viewer.addModel(pdbData, 'pdb');
-      viewer.setStyle({}, {
-        cartoon: { color: 'spectrum', opacity: 0.9 },
-        stick: { radius: 0.15, colorscheme: 'greenCarbon' },
+    try {
+      if (viewer3DRef.current) {
+        viewer3DRef.current.clear();
+      }
+      const viewer = mol3d.createViewer(viewerRef.current, {
+        backgroundColor: 'transparent',
       });
-    } else if (sequence) {
-      // Show sequence as sphere representation (placeholder)
-      const residues = sequence.split('');
-      residues.forEach((_, i) => {
-        viewer.addSphere?.({
-          center: { x: i * 3.8 - (residues.length * 1.9), y: Math.sin(i * 0.5) * 5, z: Math.cos(i * 0.3) * 3 },
-          radius: 1.2,
-          color: `hsl(${(i / residues.length) * 240}, 70%, 60%)`,
+      viewer3DRef.current = viewer;
+
+      if (pdbData) {
+        viewer.addModel(pdbData, 'pdb');
+        viewer.setStyle({}, {
+          cartoon: { color: 'spectrum', opacity: 0.9 },
+          stick: { radius: 0.15, colorscheme: 'greenCarbon' },
         });
-      });
-    }
+      } else if (sequence) {
+        const residues = sequence.split('');
+        residues.forEach((_, i) => {
+          viewer.addSphere?.({
+            center: { x: i * 3.8 - (residues.length * 1.9), y: Math.sin(i * 0.5) * 5, z: Math.cos(i * 0.3) * 3 },
+            radius: 1.2,
+            color: `hsl(${(i / residues.length) * 240}, 70%, 60%)`,
+          });
+        });
+      }
 
-    viewer.zoomTo();
-    viewer.spin?.('y', 0.5);
-    viewer.render();
-    setLoaded(true);
-  }, [pdbData, sequence]);
+      viewer.zoomTo();
+      viewer.spin?.('y', 0.5);
+      viewer.render();
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      setLoaded(true);
+    } catch (e) {
+      console.error('3D viewer error:', e);
+      setError('webgl_error');
+    }
+  }, [pdbData, sequence, webglSupported]);
 
   useEffect(() => {
+    if (!webglSupported) { setError('no_webgl'); return; }
+    // 10 second timeout
+    timeoutRef.current = setTimeout(() => {
+      if (!loaded) setError('timeout');
+    }, 10000);
     load3DmolScript(() => {
       setTimeout(initViewer, 100);
     });
     return () => {
       viewer3DRef.current?.stopAnimate?.();
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [initViewer]);
+  }, [initViewer, webglSupported, loaded]);
+
+  // Error / fallback UI
+  if (error) {
+    const messages: Record<string, { title: string; desc: string }> = {
+      no_webgl: { title: '浏览器不支持 3D 渲染', desc: '请使用 Chrome 或 Edge 浏览器以获得最佳体验' },
+      webgl_error: { title: '3D 渲染初始化失败', desc: '请刷新页面重试，或切换至 Chrome / Edge 浏览器' },
+      timeout: { title: '3D 结构加载超时', desc: '网络较慢或浏览器资源不足，请稍后重试' },
+    };
+    const msg = messages[error] || messages.webgl_error;
+    return (
+      <div className="flex flex-col h-full items-center justify-center gap-4 p-6 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center">
+          <Atom className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground">{msg.title}</p>
+          <p className="text-xs text-muted-foreground mt-1">{msg.desc}</p>
+        </div>
+        {sequence && (
+          <div className="mt-2 p-3 bg-muted/30 rounded-lg w-full">
+            <p className="text-[10px] text-muted-foreground mb-1">氨基酸序列</p>
+            <p className="text-xs font-mono text-foreground break-all">{sequence}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -227,14 +284,15 @@ function MoleculeViewer({ pdbData, name, sequence }: { pdbData: string | null; n
 
       {/* 3D Viewer */}
       <div className="flex-1 relative">
-        {!loaded && (
-          <div className="absolute inset-0 flex items-center justify-center">
+        {!loaded && !error && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
             >
               <Atom className="w-8 h-8 text-primary/50" />
             </motion.div>
+            <p className="text-xs text-muted-foreground">正在加载 3D 结构...</p>
           </div>
         )}
         <div ref={viewerRef} className="w-full h-full" />
@@ -434,11 +492,60 @@ function DockingResultsView({ candidates, selected, onSelect }: {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Export Screenshot ───────────────────────────────────────────────────────
+async function exportPanelScreenshot(panelRef: React.RefObject<HTMLDivElement | null>, modeName: string) {
+  const el = panelRef.current;
+  if (!el) return;
+  try {
+    // Use html2canvas if available, otherwise use canvas-based approach
+    const html2canvas = (await import('html2canvas').catch(() => null))?.default;
+    if (html2canvas) {
+      const canvas = await html2canvas(el, {
+        backgroundColor: null,
+        useCORS: true,
+        scale: window.devicePixelRatio || 2,
+        logging: false,
+      });
+      const link = document.createElement('a');
+      link.download = `cv-pepfind-${modeName}-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      toast.success('截图已保存');
+    } else {
+      // Fallback: find canvas element (3Dmol renders to canvas)
+      const canvas = el.querySelector('canvas');
+      if (canvas) {
+        const link = document.createElement('a');
+        link.download = `cv-pepfind-${modeName}-${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        toast.success('截图已保存');
+      } else {
+        toast.error('当前视图不支持截图导出');
+      }
+    }
+  } catch (e) {
+    console.error('Screenshot error:', e);
+    toast.error('截图导出失败，请重试');
+  }
+}
+
 export default function AIVisualizationPanel() {
   const { vizState, dispatch } = useAgent();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+    const modeName = vizState.mode === 'molecule_3d' ? 'molecule' :
+      vizState.mode === 'docking_anim' ? 'docking' :
+      vizState.mode === 'docking_result' ? 'results' : 'panel';
+    await exportPanelScreenshot(panelRef, modeName);
+    setIsExporting(false);
+  }, [vizState.mode]);
 
   return (
-    <div className="h-full bg-background relative overflow-hidden">
+    <div ref={panelRef} className="h-full bg-background relative overflow-hidden">
       {/* Status bar */}
       <AnimatePresence>
         {vizState.statusMessage && vizState.mode !== 'idle' && (
@@ -514,17 +621,57 @@ export default function AIVisualizationPanel() {
              vizState.mode === 'docking_result' ? '筛选结果' :
              vizState.mode}
           </span>
-          {(vizState.mode as string) !== 'idle' && (
-            <button
-              onClick={() => dispatch({ type: 'RESET' })}
-              className="ml-1 text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-              title="重置"
-            >
-              <ChevronRight className="w-3 h-3 rotate-180" />
-            </button>
-          )}
+          {/* Export Screenshot Button */}
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="ml-1 p-0.5 text-muted-foreground/60 hover:text-primary transition-colors disabled:opacity-50"
+            title="导出截图"
+            aria-label="导出截图"
+          >
+            {isExporting ? (
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
+                <Camera className="w-3 h-3" />
+              </motion.div>
+            ) : (
+              <Camera className="w-3 h-3" />
+            )}
+          </button>
+          <button
+            onClick={() => dispatch({ type: 'RESET' })}
+            className="p-0.5 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+            title="重置"
+            aria-label="重置可视化"
+          >
+            <ChevronRight className="w-3 h-3 rotate-180" />
+          </button>
         </div>
       )}
+
+      {/* Export Screenshot Button (always visible, top-right) */}
+      <motion.button
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        onClick={handleExport}
+        disabled={isExporting}
+        className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-card/80 backdrop-blur-sm border border-border/40 rounded-full px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-card/95 transition-all disabled:opacity-50 shadow-sm"
+        title="导出截图"
+        aria-label="导出当前可视化面板截图"
+      >
+        {isExporting ? (
+          <>
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
+              <Camera className="w-3 h-3" />
+            </motion.div>
+            <span>导出中...</span>
+          </>
+        ) : (
+          <>
+            <Camera className="w-3 h-3" />
+            <span>导出截图</span>
+          </>
+        )}
+      </motion.button>
     </div>
   );
 }

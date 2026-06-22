@@ -59,7 +59,14 @@
     "deleteConfirmTitle": "Excluir sessão",
     "deleteConfirmMessage": "Tem certeza de que deseja excluir esta sessão? Esta ação não pode ser desfeita.",
     "deleteConfirmButton": "Excluir",
-    "deleteCancelButton": "Cancelar"
+    "deleteCancelButton": "Cancelar",
+    "aiProcessing": "A IA está analisando...",
+    "copyMessage": "Copiar mensagem",
+    "copiedToClipboard": "Copiado para a área de transferência",
+    "exportScreenshot": "Exportar captura",
+    "exportChat": "Exportar conversa",
+    "renameSession": "Renomear sessão",
+    "enterNewTitle": "Digite novo título"
   },
   "hero": {
     "greeting": "Bem-vindo ao CV-PepFind",

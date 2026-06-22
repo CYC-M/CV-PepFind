@@ -59,7 +59,14 @@
     "deleteConfirmTitle": "セッションを削除",
     "deleteConfirmMessage": "このセッションを削除してもよろしいですか？この操作は取り消せません。",
     "deleteConfirmButton": "削除",
-    "deleteCancelButton": "キャンセル"
+    "deleteCancelButton": "キャンセル",
+    "aiProcessing": "AIが分析中...",
+    "copyMessage": "メッセージをコピー",
+    "copiedToClipboard": "クリップボードにコピーしました",
+    "exportScreenshot": "スクリーンショットをエクスポート",
+    "exportChat": "チャットをエクスポート",
+    "renameSession": "セッションの名前変更",
+    "enterNewTitle": "新しいタイトルを入力"
   },
   "hero": {
     "greeting": "CV-PepFindへようこそ",

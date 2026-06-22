@@ -59,7 +59,14 @@
     "deleteConfirmTitle": "删除会话",
     "deleteConfirmMessage": "确定要删除此会话吗？删除后无法恢复。",
     "deleteConfirmButton": "删除",
-    "deleteCancelButton": "取消"
+    "deleteCancelButton": "取消",
+    "aiProcessing": "AI 正在分析中...",
+    "copyMessage": "复制消息",
+    "copiedToClipboard": "已复制到剪贴板",
+    "exportScreenshot": "导出截图",
+    "exportChat": "导出对话",
+    "renameSession": "重命名会话",
+    "enterNewTitle": "请输入新标题"
   },
   "hero": {
     "greeting": "欢迎使用CV-PepFind",
