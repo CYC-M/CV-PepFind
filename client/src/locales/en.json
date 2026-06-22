@@ -68,7 +68,9 @@
     "renameSession": "Rename Session",
     "enterNewTitle": "Enter new title",
     "exportConversation": "Export Conversation",
-    "exportSuccess": "Conversation exported as Markdown"
+    "exportSuccess": "Conversation exported as Markdown",
+    "retrievingDatabase": "Querying UniProt database...",
+    "retrievalDone": "Found {count} peptides from UniProt"
   },
   "hero": {
     "greeting": "Welcome to CV-PepFind",

@@ -68,7 +68,9 @@
     "renameSession": "セッションの名前変更",
     "enterNewTitle": "新しいタイトルを入力",
     "exportConversation": "会話をエクスポート",
-    "exportSuccess": "会話をMarkdownとしてエクスポートしました"
+    "exportSuccess": "会話をMarkdownとしてエクスポートしました",
+    "retrievingDatabase": "UniProtデータベースを検索中...",
+    "retrievalDone": "UniProtから{count}個のペプチドが見つかりました"
   },
   "hero": {
     "greeting": "CV-PepFindへようこそ",

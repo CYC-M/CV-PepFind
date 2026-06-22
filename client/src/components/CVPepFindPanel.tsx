@@ -60,6 +60,8 @@ export default function CVPepFindPanel() {
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const [isRetrieving, setIsRetrieving] = useState(false);
+  const [retrievalCount, setRetrievalCount] = useState<number | null>(null);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showSessions, setShowSessions] = useState(false);
@@ -176,6 +178,14 @@ export default function CVPepFindPanel() {
               } else if (parsed.type === 'tool_call' && parsed.tool) {
                 // AI 触发系统控制指令 → 更新可视化面板
                 handleToolCall(parsed.tool, parsed.args || {});
+              } else if (parsed.type === 'retrieval_start') {
+                // Real database retrieval in progress
+                setIsRetrieving(true);
+                setRetrievalCount(null);
+              } else if (parsed.type === 'retrieval_done') {
+                // Retrieval completed
+                setIsRetrieving(false);
+                setRetrievalCount(parsed.count ?? null);
               } else if (parsed.type === 'done' || parsed.type === 'error') {
                 break;
               }
@@ -198,6 +208,7 @@ export default function CVPepFindPanel() {
       setIsStreaming(false);
       setAiState('idle');
       setIsWaitingForResponse(false);
+      setIsRetrieving(false);
     }
   }, [isStreaming, sessionId, language, t]);
 
@@ -415,12 +426,26 @@ export default function CVPepFindPanel() {
             </div>
             <div className="flex-1 py-2 px-3 rounded-lg bg-muted/50 border border-border/50">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">{t('rightPanel.aiProcessing') || 'Processing...'}</span>
-                <div className="flex gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '0ms' }} />
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '150ms' }} />
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '300ms' }} />
-                </div>
+                {isRetrieving ? (
+                  <>
+                    <Search className="w-3 h-3 text-primary animate-pulse" />
+                    <span className="text-xs text-primary">{t('rightPanel.retrievingDatabase') || 'Querying UniProt database...'}</span>
+                  </>
+                ) : retrievalCount !== null ? (
+                  <>
+                    <Dna className="w-3 h-3 text-emerald-400" />
+                    <span className="text-xs text-emerald-400">{t('rightPanel.retrievalDone')?.replace('{count}', String(retrievalCount)) || `Found ${retrievalCount} peptides from UniProt`}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xs text-muted-foreground">{t('rightPanel.aiProcessing') || 'Processing...'}</span>
+                    <div className="flex gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '0ms' }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '150ms' }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>

@@ -68,7 +68,9 @@
     "renameSession": "Renombrar sesión",
     "enterNewTitle": "Ingrese nuevo título",
     "exportConversation": "Exportar conversación",
-    "exportSuccess": "Conversación exportada como Markdown"
+    "exportSuccess": "Conversación exportada como Markdown",
+    "retrievingDatabase": "Consultando base de datos UniProt...",
+    "retrievalDone": "Se encontraron {count} péptidos en UniProt"
   },
   "hero": {
     "greeting": "Bienvenido a CV-PepFind",

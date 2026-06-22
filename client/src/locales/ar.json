@@ -68,7 +68,9 @@
     "renameSession": "إعادة تسمية الجلسة",
     "enterNewTitle": "أدخل عنواناً جديداً",
     "exportConversation": "تصدير المحادثة",
-    "exportSuccess": "تم تصدير المحادثة بتنسيق Markdown"
+    "exportSuccess": "تم تصدير المحادثة بتنسيق Markdown",
+    "retrievingDatabase": "جاري الاستعلام من قاعدة بيانات UniProt...",
+    "retrievalDone": "تم العثور على {count} ببتيدات من UniProt"
   },
   "hero": {
     "greeting": "مرحبا بك في CV-PepFind",

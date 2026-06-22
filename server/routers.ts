@@ -11,6 +11,7 @@ import {
   upsertChatSession, saveChatMessage, getChatHistory, getRecentChatSessions, deleteChatSession, updateSessionTitleIfEmpty,
 } from "./db";
 import { runPipeline, validateSequence } from "./pipeline";
+import { retrievePeptidesFromUniProt, searchPeptidesBySequence, formatRetrievalResultsForLLM } from "./peptideRetrieval";
 import { invokeLLM } from "./_core/llm";
 import type { Request, Response } from "express";
 import type { Express } from "express";
@@ -150,6 +151,33 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const success = await deleteChatSession(input.sessionId);
         return { success };
+      }),
+
+    // Real peptide database retrieval from UniProt
+    retrievePeptides: publicProcedure
+      .input(z.object({
+        description: z.string().min(2).max(500),
+        limit: z.number().min(1).max(20).default(10),
+        maxLength: z.number().min(5).max(100).default(50),
+      }))
+      .query(async ({ input }) => {
+        const result = await retrievePeptidesFromUniProt(
+          input.description,
+          input.limit,
+          input.maxLength,
+        );
+        return result;
+      }),
+
+    // Search peptides by sequence in UniProt
+    searchBySequence: publicProcedure
+      .input(z.object({
+        sequence: z.string().min(3).max(100),
+        limit: z.number().min(1).max(10).default(5),
+      }))
+      .query(async ({ input }) => {
+        const result = await searchPeptidesBySequence(input.sequence, input.limit);
+        return result;
       }),
   }),
 });
@@ -420,12 +448,53 @@ export function registerAgentSSE(app: Express) {
       const history = await getChatHistory(cleanSessionId, 20);
       const messages = history.map(m => ({ role: m.role as "user" | "assistant", content: m.content }));
 
+      // ── Real Peptide Database Retrieval (RAG) ──────────────────────────────
+      // Detect if the user's message is asking for peptide retrieval/search
+      let retrievalContext = '';
+      const RETRIEVAL_KEYWORDS = [
+        'find', 'search', 'retrieve', 'look up', 'show me', 'list',
+        'recommend', 'suggest', 'similar', 'related', 'database',
+        'peptide', 'sequence', 'antimicrobial', 'antiviral', 'antifungal',
+        'cell-penetrating', 'neuropeptide', 'hormone', 'bioactive',
+        '查找', '搜索', '检索', '推荐', '相似', '数据库', '多肽', '序列',
+        '抗菌', '抗病毒', '抗真菌', '穿膜肽', '神经肽',
+        'buscar', 'encontrar', 'rechercher', 'trouver', 'suchen',
+      ];
+      const messageLower = message.toLowerCase();
+      const isRetrievalQuery = RETRIEVAL_KEYWORDS.some(kw => messageLower.includes(kw.toLowerCase()));
+
+      if (isRetrievalQuery) {
+        try {
+          // Emit a status event to inform the frontend that retrieval is happening
+          if (!finished && !res.writableEnded) {
+            res.write(`data: ${JSON.stringify({ type: 'retrieval_start', message: 'Querying UniProt database...' })}\n\n`);
+          }
+          const retrievalResult = await retrievePeptidesFromUniProt(message, 8, 60);
+          if (retrievalResult.peptides.length > 0) {
+            retrievalContext = '\n\n' + formatRetrievalResultsForLLM(retrievalResult);
+            // Emit retrieval done event
+            if (!finished && !res.writableEnded) {
+              res.write(`data: ${JSON.stringify({ type: 'retrieval_done', count: retrievalResult.peptides.length, source: 'UniProt' })}\n\n`);
+            }
+          }
+        } catch (retrievalErr) {
+          // Retrieval failure is non-fatal; continue with LLM-only response
+          console.warn('[Agent SSE] Peptide retrieval failed (non-fatal):', retrievalErr);
+        }
+      }
+
       // Call LLM with streaming
       const apiUrl = process.env.BUILT_IN_FORGE_API_URL;
       const apiKey = process.env.BUILT_IN_FORGE_API_KEY;
 
-      // Get language-specific system prompt
-      const systemPrompt = getSystemPromptForLanguage(userLanguage);
+      // Get language-specific system prompt, augmented with real retrieval data if available
+      const baseSystemPrompt = getSystemPromptForLanguage(userLanguage);
+      const systemPrompt = retrievalContext
+        ? baseSystemPrompt + '\n\n## Real-Time Database Context\n' +
+          'The following data was retrieved from UniProt in real-time for this query. ' +
+          'Use this data to provide accurate, evidence-based responses with real accession numbers and sequences:' +
+          retrievalContext
+        : baseSystemPrompt;
 
       const llmRes = await fetch(`${apiUrl}/v1/chat/completions`, {
         method: 'POST',

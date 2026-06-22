@@ -68,7 +68,9 @@
     "renameSession": "Переименовать сессию",
     "enterNewTitle": "Введите новый заголовок",
     "exportConversation": "Экспорт разговора",
-    "exportSuccess": "Разговор экспортирован в Markdown"
+    "exportSuccess": "Разговор экспортирован в Markdown",
+    "retrievingDatabase": "Запрос к базе данных UniProt...",
+    "retrievalDone": "Найдено {count} пептидов в UniProt"
   },
   "hero": {
     "greeting": "Добро пожаловать в CV-PepFind",

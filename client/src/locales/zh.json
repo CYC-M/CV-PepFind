@@ -68,7 +68,9 @@
     "renameSession": "重命名会话",
     "enterNewTitle": "请输入新标题",
     "exportConversation": "导出对话",
-    "exportSuccess": "对话已导出为 Markdown"
+    "exportSuccess": "对话已导出为 Markdown",
+    "retrievingDatabase": "正在检索 UniProt 数据库...",
+    "retrievalDone": "从 UniProt 检索到 {count} 个多肽"
   },
   "hero": {
     "greeting": "欢迎使用CV-PepFind",

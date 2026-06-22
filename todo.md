@@ -42,7 +42,7 @@
 - [x] 全部15个测试通过
 
 ## 待改进项（后续迭代）
-- [ ] 实现真实多肽资料库检索/召回链路（当前为LLM模拟，需要外部数据源支持）
+- [x] 实现真实多肽资料库检索/召回链路（UniProt REST API集成，RAG增强，11个单元测试全部通过）
 - [x] CV-PepFind前端增加历史会话列表与恢复能力
 - [x] 修复 getQueryHistory/getRecentChatSessions 的 userId 过滤（当前无用户隔离）
 - [x] 补充 SSE 流式端点集成测试（11个用例覆盖Pipeline和Agent流式端点）
