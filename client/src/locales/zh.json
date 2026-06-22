@@ -66,7 +66,9 @@
     "exportScreenshot": "导出截图",
     "exportChat": "导出对话",
     "renameSession": "重命名会话",
-    "enterNewTitle": "请输入新标题"
+    "enterNewTitle": "请输入新标题",
+    "exportConversation": "导出对话",
+    "exportSuccess": "对话已导出为 Markdown"
   },
   "hero": {
     "greeting": "欢迎使用CV-PepFind",

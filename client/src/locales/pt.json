@@ -66,7 +66,9 @@
     "exportScreenshot": "Exportar captura",
     "exportChat": "Exportar conversa",
     "renameSession": "Renomear sessão",
-    "enterNewTitle": "Digite novo título"
+    "enterNewTitle": "Digite novo título",
+    "exportConversation": "Exportar conversa",
+    "exportSuccess": "Conversa exportada como Markdown"
   },
   "hero": {
     "greeting": "Bem-vindo ao CV-PepFind",

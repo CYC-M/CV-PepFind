@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot, Send, Sparkles, Dna, Search, Zap, RotateCcw,
-  ChevronDown, Loader2, User, Copy, Check, Trash2,
+  ChevronDown, Loader2, User, Copy, Check, Trash2, Download,
 } from "lucide-react";
 import { Streamdown } from "streamdown";
 import { nanoid } from "nanoid";
@@ -246,6 +246,32 @@ export default function CVPepFindPanel() {
     }
   };
 
+  const exportConversation = () => {
+    const lines: string[] = [
+      `# CV-PepFind 对话导出`,
+      `> 导出时间：${new Date().toLocaleString()}`,
+      '',
+    ];
+    messages.forEach(msg => {
+      const role = msg.role === 'assistant' ? '**CV-PepFind**' : '**用户**';
+      const time = new Intl.DateTimeFormat('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false }).format(msg.timestamp);
+      lines.push(`### ${role} \`${time}\``);
+      lines.push('');
+      lines.push(msg.content);
+      lines.push('');
+      lines.push('---');
+      lines.push('');
+    });
+    const blob = new Blob([lines.join('\n')], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cv-pepfind-conversation-${new Date().toISOString().slice(0, 10)}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(t('rightPanel.exportSuccess') || '对话已导出为 Markdown', { duration: 2000 });
+  };
+
   // Quick prompts with i18n
   const QUICK_PROMPTS = [
     { icon: Search, labelKey: 'quickPrompts.queryAntimicrobial', promptKey: 'quickPrompts.queryAntimicrobialPrompt' },
@@ -296,6 +322,15 @@ export default function CVPepFindPanel() {
             aria-label="New Session"
           >
             <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={exportConversation}
+            disabled={messages.length <= 1}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            title={t('rightPanel.exportConversation') || '导出对话'}
+            aria-label="Export conversation as Markdown"
+          >
+            <Download className="w-3.5 h-3.5" />
           </button>
 
           {/* Sessions dropdown panel */}
@@ -425,7 +460,17 @@ export default function CVPepFindPanel() {
                       )}
                     </div>
                   ) : (
-                    <p className="text-sm" role="article" aria-label="Your message">{msg.content}</p>
+                    <p
+                      className={`text-sm break-all ${
+                        /^[ACDEFGHIKLMNPQRSTVWY]{4,}$/i.test(msg.content.trim())
+                          ? 'font-mono tracking-wider text-accent'
+                          : ''
+                      }`}
+                      role="article"
+                      aria-label="Your message"
+                    >
+                      {msg.content}
+                    </p>
                   )}
 
                   {/* Copy button */}
