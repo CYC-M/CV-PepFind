@@ -49,6 +49,11 @@ export interface VizState {
   rcsbUrl: string | null;
   /** Whether a PDB fetch is in progress */
   pdbFetchLoading: boolean;
+  /** Comparison mode: reference PDB structure for side-by-side view */
+  comparisonPdbData: string | null;
+  comparisonPdbId: string | null;
+  comparisonPdbTitle: string | null;
+  comparisonRcsbUrl: string | null;
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
@@ -61,6 +66,8 @@ export type AgentAction =
   | { type: 'UPDATE_DOCKING_ANIMATION'; phase: 'approach' | 'binding' | 'bound' }
   | { type: 'SET_DOCKING_RESULTS'; candidates: DockingCandidate[] }
   | { type: 'SELECT_CANDIDATE'; index: number }
+  | { type: 'SET_COMPARISON_PDB'; pdbData: string; pdbId: string; title: string; rcsbUrl: string }
+  | { type: 'CLEAR_COMPARISON' }
   | { type: 'SET_STATUS'; message: string }
   | { type: 'RESET' };
 
@@ -82,6 +89,10 @@ const initialState: VizState = {
   currentPdbId: null,
   rcsbUrl: null,
   pdbFetchLoading: false,
+  comparisonPdbData: null,
+  comparisonPdbId: null,
+  comparisonPdbTitle: null,
+  comparisonRcsbUrl: null,
 };
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
@@ -148,8 +159,31 @@ function vizReducer(state: VizState, action: AgentAction): VizState {
         selectedCandidate: action.index,
         pdbData: c?.pdbData ?? state.pdbData,
         mode: c?.pdbData ? 'molecule_3d' : state.mode,
+        comparisonPdbData: null,
+        comparisonPdbId: null,
+        comparisonPdbTitle: null,
+        comparisonRcsbUrl: null,
       };
     }
+
+    case 'SET_COMPARISON_PDB':
+      return {
+        ...state,
+        mode: 'molecule_3d',
+        comparisonPdbData: action.pdbData,
+        comparisonPdbId: action.pdbId,
+        comparisonPdbTitle: action.title,
+        comparisonRcsbUrl: action.rcsbUrl,
+      };
+
+    case 'CLEAR_COMPARISON':
+      return {
+        ...state,
+        comparisonPdbData: null,
+        comparisonPdbId: null,
+        comparisonPdbTitle: null,
+        comparisonRcsbUrl: null,
+      };
 
     case 'SET_STATUS':
       return { ...state, statusMessage: action.message };
@@ -169,6 +203,8 @@ interface AgentContextValue {
   dispatch: React.Dispatch<AgentAction>;
   /** AI 解析 SSE tool_call 指令并分发（含自动 PDB 拉取） */
   handleToolCall: (toolName: string, args: Record<string, unknown>) => void;
+  /** Fetch comparison PDB structure by sequence for side-by-side view */
+  fetchComparisonPdb: (sequence: string) => Promise<void>;
 }
 
 const AgentContext = createContext<AgentContextValue | null>(null);
@@ -178,6 +214,27 @@ export function AgentProvider({ children }: { children: ReactNode }) {
 
   // tRPC query utility for PDB fetching (imperative via utils)
   const trpcUtils = trpc.useUtils();
+
+  // Helper: fetch comparison PDB structure for a candidate sequence
+  const fetchComparisonPdb = useCallback(async (sequence: string) => {
+    try {
+      const result = await trpcUtils.agent.fetchPdbStructure.fetch({
+        query: sequence.trim(),
+        isSequence: true,
+      });
+      if (result.pdbFileContent && result.entry?.pdbId) {
+        dispatch({
+          type: 'SET_COMPARISON_PDB',
+          pdbData: result.pdbFileContent,
+          pdbId: result.entry.pdbId,
+          title: result.entry.title ?? 'Reference Structure',
+          rcsbUrl: result.entry.rcsbUrl ?? `https://www.rcsb.org/structure/${result.entry.pdbId}`,
+        });
+      }
+    } catch (err) {
+      console.error('[AgentContext] Comparison PDB fetch failed:', err);
+    }
+  }, [trpcUtils]);
 
   const handleToolCall = useCallback((toolName: string, args: Record<string, unknown>) => {
     switch (toolName) {
@@ -282,7 +339,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   }, [trpcUtils]);
 
   return (
-    <AgentContext.Provider value={{ vizState, dispatch, handleToolCall }}>
+    <AgentContext.Provider value={{ vizState, dispatch, handleToolCall, fetchComparisonPdb }}>
       {children}
     </AgentContext.Provider>
   );

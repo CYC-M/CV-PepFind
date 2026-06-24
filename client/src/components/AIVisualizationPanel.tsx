@@ -12,6 +12,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Atom, Dna, Zap, Trophy, Activity, ChevronRight, Sparkles, Target, FlaskConical, Camera, Check } from "lucide-react";
 import { useAgent, type DockingCandidate } from "@/contexts/AgentContext";
+import ComparisonViewer from "./ComparisonViewer";
 import { toast } from "sonner";
 
 // ─── 3Dmol.js 类型声明 ────────────────────────────────────────────────────────
@@ -452,6 +453,15 @@ function DockingResultsView({ candidates, selected, onSelect }: {
   selected: number | null;
   onSelect: (i: number) => void;
 }) {
+  const { fetchComparisonPdb } = useAgent();
+
+  const handleCandidateClick = (index: number) => {
+    onSelect(index);
+    const candidate = candidates[index];
+    if (candidate?.sequence) {
+      fetchComparisonPdb(candidate.sequence).catch(console.error);
+    }
+  };
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -473,7 +483,7 @@ function DockingResultsView({ candidates, selected, onSelect }: {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.1 }}
-            onClick={() => onSelect(i)}
+            onClick={() => handleCandidateClick(i)}
             className={`w-full text-left p-3 rounded-xl border transition-all ${
               selected === i
                 ? 'border-primary/60 bg-primary/10'
@@ -567,6 +577,7 @@ export default function AIVisualizationPanel() {
   const { vizState, dispatch } = useAgent();
   const panelRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
 
   const handleExport = useCallback(async () => {
     setIsExporting(true);
@@ -579,6 +590,20 @@ export default function AIVisualizationPanel() {
 
   return (
     <div ref={panelRef} className="h-full bg-background relative overflow-hidden">
+      {/* Comparison viewer modal */}
+      <AnimatePresence>
+        {showComparison && vizState.comparisonPdbData && (
+          <ComparisonViewer
+            candidatePdbData={vizState.pdbData}
+            candidateName={vizState.moleculeName ?? 'Candidate'}
+            referencePdbData={vizState.comparisonPdbData}
+            referenceName={vizState.comparisonPdbTitle ?? 'Reference'}
+            referenceUrl={vizState.comparisonRcsbUrl ?? undefined}
+            onClose={() => setShowComparison(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Status bar */}
       <AnimatePresence>
         {vizState.statusMessage && vizState.mode !== 'idle' && (
@@ -603,7 +628,7 @@ export default function AIVisualizationPanel() {
         )}
 
         {vizState.mode === 'molecule_3d' && (
-          <motion.div key="molecule" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="h-full">
+          <motion.div key="molecule" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="h-full flex flex-col">
             <MoleculeViewer
               pdbData={vizState.pdbData}
               name={vizState.moleculeName}
@@ -612,6 +637,17 @@ export default function AIVisualizationPanel() {
               pdbId={vizState.currentPdbId}
               rcsbUrl={vizState.rcsbUrl}
             />
+            {vizState.comparisonPdbData && (
+              <motion.button
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={() => setShowComparison(true)}
+                className="mx-4 mb-4 px-4 py-2 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2"
+              >
+                <Dna className="w-4 h-4" />
+                View Side-by-Side Comparison
+              </motion.button>
+            )}
           </motion.div>
         )}
 
