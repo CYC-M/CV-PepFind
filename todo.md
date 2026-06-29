@@ -192,3 +192,10 @@
 - [x] 前端：将 ViewControlPanel 集成到 MoleculeViewer 头部，与 RenderingStyleSelector 并排
 - [x] 前端：添加交互反馈及键盘快捷键（R 复位、Space 旋转）
 - [x] 测试：新增视图控制交互单元测试（24 个用例全部通过）
+
+## 3D 分子悬浮提示功能（新增）
+- [x] 前端：实现悬停命中检测（使用最近沙算法，3Dmol.js 不公开官方 picking API）
+- [x] 前端：修复 tooltip 定位逻辑（考虑容器页面偏移，防止流出）
+- [x] 前端：修复高亮清除逻辑（恢复到当前 renderingStyle）
+- [x] 前端：H 键快捷键支持（切换 tooltip 显示/隐藏）
+- [x] 测试：新增 atomHoverDetector.test.ts 单元测试文件（24 个用例，待客户端测试启用）

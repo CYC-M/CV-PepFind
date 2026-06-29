@@ -17,6 +17,8 @@ import { RenderingStyleSelector, type RenderingStyle } from "./RenderingStyleSel
 import { applyRenderingStyle } from "@/lib/renderingStyleManager";
 import { ViewControlPanel } from "./ViewControlPanel";
 import { resetView, toggleAutoSpin, startAutoSpin, stopAutoSpin } from "@/lib/viewControlManager";
+import { AtomTooltip } from "./AtomTooltip";
+import { getNearbyAtoms, highlightAtom, clearAtomHighlight, type AtomInfo } from "@/lib/atomHoverDetector";
 import { toast } from "sonner";
 
 // ─── 3Dmol.js 类型声明 ────────────────────────────────────────────────────────
@@ -31,6 +33,10 @@ interface Mol3DViewer {
   removeAllModels?: () => void;
   addSphere?: (spec: Record<string, unknown>) => void;
   setBackgroundColor?: (color: string) => void;
+  getModel?: (index?: number) => any;
+  setOrientation?: (mat: Array<Array<number>>) => void;
+  getView?: () => any;
+  setView?: (view: any) => void;
 }
 interface Mol3DLib {
   createViewer: (element: HTMLElement, config: Record<string, unknown>) => Mol3DViewer;
@@ -183,7 +189,13 @@ function MoleculeViewer({ pdbData, name, sequence, isRealData, pdbId, rcsbUrl }:
   const [webglSupported] = useState(() => checkWebGLSupport());
   const [renderingStyle, setRenderingStyle] = useState<RenderingStyle>('cartoon');
   const [isAutoSpinning, setIsAutoSpinning] = useState(false);
+  const [hoveredAtom, setHoveredAtom] = useState<AtomInfo | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipEnabled, setTooltipEnabled] = useState(true);
+  const [nearbyAtoms, setNearbyAtoms] = useState<AtomInfo[]>([]);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Handle reset view
   const handleResetView = useCallback(() => {
@@ -206,6 +218,81 @@ function MoleculeViewer({ pdbData, name, sequence, isRealData, pdbId, rcsbUrl }:
     }
   }, []);
 
+  // Handle atom hover
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!loaded || !tooltipEnabled || !viewer3DRef.current) return;
+
+      const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      setTooltipPosition({ x, y });
+
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+
+      hoverTimeoutRef.current = setTimeout(() => {
+        try {
+          const model = viewer3DRef.current?.getModel?.();
+          if (!model || !model.atoms) return;
+
+          const atoms = model.atoms as AtomInfo[];
+          if (atoms.length === 0) return;
+
+              // Find closest atom to mouse position
+          let closestAtom: AtomInfo | null = null;
+          let closestDistance = 30;
+
+          for (const atom of atoms) {
+            const dist = Math.sqrt(Math.pow(x - atom.x, 2) + Math.pow(y - atom.y, 2));
+            if (dist < closestDistance) {
+              closestDistance = dist;
+              closestAtom = atom;
+            }
+          }
+
+          if (closestAtom && viewer3DRef.current) {
+            setHoveredAtom(closestAtom);
+            setShowTooltip(true);
+            highlightAtom(viewer3DRef.current as any, closestAtom, renderingStyle);
+
+            const nearby = getNearbyAtoms(viewer3DRef.current as any, closestAtom, 4.0);
+            setNearbyAtoms(nearby);
+
+            // Calculate absolute tooltip position with boundary checking
+            const tooltipX = rect.left + x + 12;
+            const tooltipY = rect.top + y + 12;
+
+            let finalX = tooltipX;
+            let finalY = tooltipY;
+
+            if (finalX + 300 > window.innerWidth) {
+              finalX = window.innerWidth - 300 - 12;
+            }
+            if (finalY + 200 > window.innerHeight) {
+              finalY = window.innerHeight - 200 - 12;
+            }
+
+            setTooltipPosition({ x: finalX, y: finalY });
+          }
+        } catch (error) {
+          console.error('Hover detection error:', error);
+        }
+      }, 100);
+    },
+    [loaded, tooltipEnabled, renderingStyle]
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    setShowTooltip(false);
+    setHoveredAtom(null);
+    setNearbyAtoms([]);
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    if (viewer3DRef.current) {
+      clearAtomHighlight(viewer3DRef.current as any, renderingStyle);
+    }
+  }, [renderingStyle]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -225,12 +312,15 @@ function MoleculeViewer({ pdbData, name, sequence, isRealData, pdbId, rcsbUrl }:
       } else if (e.key === ' ') {
         e.preventDefault();
         handleToggleAutoSpin(!isAutoSpinning);
+      } else if (e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
+        setTooltipEnabled(!tooltipEnabled);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [loaded, isAutoSpinning, handleResetView, handleToggleAutoSpin]);
+  }, [loaded, isAutoSpinning, handleResetView, handleToggleAutoSpin, tooltipEnabled]);
 
   // Load rendering style preference from localStorage
   useEffect(() => {
@@ -401,7 +491,11 @@ function MoleculeViewer({ pdbData, name, sequence, isRealData, pdbId, rcsbUrl }:
       </div>
 
       {/* 3D Viewer */}
-      <div className="flex-1 relative">
+      <div
+        className="flex-1 relative"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      >
         {!loaded && !error && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
             <motion.div
@@ -414,6 +508,12 @@ function MoleculeViewer({ pdbData, name, sequence, isRealData, pdbId, rcsbUrl }:
           </div>
         )}
         <div ref={viewerRef} className="w-full h-full" />
+        <AtomTooltip
+          atom={hoveredAtom}
+          position={tooltipPosition}
+          visible={showTooltip && tooltipEnabled}
+          nearbyAtoms={nearbyAtoms}
+        />
       </div>
     </div>
   );
