@@ -15,6 +15,8 @@ import { useAgent, type DockingCandidate } from "@/contexts/AgentContext";
 import ComparisonViewer from "./ComparisonViewer";
 import { RenderingStyleSelector, type RenderingStyle } from "./RenderingStyleSelector";
 import { applyRenderingStyle } from "@/lib/renderingStyleManager";
+import { ViewControlPanel } from "./ViewControlPanel";
+import { resetView, toggleAutoSpin, startAutoSpin, stopAutoSpin } from "@/lib/viewControlManager";
 import { toast } from "sonner";
 
 // ─── 3Dmol.js 类型声明 ────────────────────────────────────────────────────────
@@ -180,7 +182,55 @@ function MoleculeViewer({ pdbData, name, sequence, isRealData, pdbId, rcsbUrl }:
   const [error, setError] = useState<string | null>(null);
   const [webglSupported] = useState(() => checkWebGLSupport());
   const [renderingStyle, setRenderingStyle] = useState<RenderingStyle>('cartoon');
+  const [isAutoSpinning, setIsAutoSpinning] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Handle reset view
+  const handleResetView = useCallback(() => {
+    if (viewer3DRef.current) {
+      resetView(viewer3DRef.current);
+      setIsAutoSpinning(false);
+    }
+  }, []);
+
+  // Handle auto-spin toggle
+  const handleToggleAutoSpin = useCallback((shouldSpin: boolean) => {
+    if (viewer3DRef.current) {
+      if (shouldSpin) {
+        startAutoSpin(viewer3DRef.current);
+        setIsAutoSpinning(true);
+      } else {
+        stopAutoSpin(viewer3DRef.current);
+        setIsAutoSpinning(false);
+      }
+    }
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!loaded) return;
+
+      // Check if user is typing in an input field
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        handleResetView();
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        handleToggleAutoSpin(!isAutoSpinning);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [loaded, isAutoSpinning, handleResetView, handleToggleAutoSpin]);
 
   // Load rendering style preference from localStorage
   useEffect(() => {
@@ -298,10 +348,16 @@ function MoleculeViewer({ pdbData, name, sequence, isRealData, pdbId, rcsbUrl }:
           )}
         </div>
         {loaded && (
-          <div className="ml-2">
+          <div className="ml-2 flex items-center gap-2">
             <RenderingStyleSelector
               currentStyle={renderingStyle}
               onStyleChange={handleStyleChange}
+              disabled={!loaded}
+            />
+            <div className="w-px h-6 bg-border/50" />
+            <ViewControlPanel
+              onResetView={handleResetView}
+              onToggleAutoSpin={handleToggleAutoSpin}
               disabled={!loaded}
             />
           </div>

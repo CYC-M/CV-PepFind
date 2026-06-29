@@ -184,3 +184,11 @@
 - [x] 前端：添加样式持久化（localStorage），记忆用户偏好
 - [x] 前端：UI 优化，按钮组件美观、响应式布局、键盘快捷键支持（1-5 快捷键）
 - [x] 测试：新增渲染模式切换单元测试（renderingStyleManager.test.ts 包含 18 个用例，Vitest 配置中客户端测试未启用，总计 56 个测试通过）
+
+## 3D 视图交互控制优化（新增）
+- [x] 前端：MoleculeViewer 中实现一键复位视觘功能（zoomTo + 重置旋转）
+- [x] 前端：实现自动旋转开关（Auto-spin），支持启用/禁用旋转动画
+- [x] 前端：创建 ViewControlPanel 组件，包含复位视觘和自动旋转控制
+- [x] 前端：将 ViewControlPanel 集成到 MoleculeViewer 头部，与 RenderingStyleSelector 并排
+- [x] 前端：添加交互反馈及键盘快捷键（R 复位、Space 旋转）
+- [x] 测试：新增视图控制交互单元测试（24 个用例全部通过）
