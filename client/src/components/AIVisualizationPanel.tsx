@@ -13,6 +13,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Atom, Dna, Zap, Trophy, Activity, ChevronRight, Sparkles, Target, FlaskConical, Camera, Check } from "lucide-react";
 import { useAgent, type DockingCandidate } from "@/contexts/AgentContext";
 import ComparisonViewer from "./ComparisonViewer";
+import { RenderingStyleSelector, type RenderingStyle } from "./RenderingStyleSelector";
+import { applyRenderingStyle } from "@/lib/renderingStyleManager";
 import { toast } from "sonner";
 
 // ─── 3Dmol.js 类型声明 ────────────────────────────────────────────────────────
@@ -177,13 +179,33 @@ function MoleculeViewer({ pdbData, name, sequence, isRealData, pdbId, rcsbUrl }:
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [webglSupported] = useState(() => checkWebGLSupport());
+  const [renderingStyle, setRenderingStyle] = useState<RenderingStyle>('cartoon');
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load rendering style preference from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('preferred-rendering-style');
+    if (saved && ['cartoon', 'stick', 'surface', 'sphere', 'line'].includes(saved)) {
+      setRenderingStyle(saved as RenderingStyle);
+    }
+  }, []);
+
+  // Handle rendering style changes
+  const handleStyleChange = useCallback((style: RenderingStyle) => {
+    setRenderingStyle(style);
+    localStorage.setItem('preferred-rendering-style', style);
+    if (viewer3DRef.current) {
+      applyRenderingStyle(viewer3DRef.current, style);
+    }
+  }, []);
 
   const initViewer = useCallback(() => {
     if (!webglSupported) {
       setError('no_webgl');
       return;
     }
+    // Ensure we use the current renderingStyle when initializing
+    const styleToApply = renderingStyle;
     const mol3d = get3Dmol();
     if (!viewerRef.current || !mol3d) return;
     try {
@@ -197,10 +219,7 @@ function MoleculeViewer({ pdbData, name, sequence, isRealData, pdbId, rcsbUrl }:
 
       if (pdbData) {
         viewer.addModel(pdbData, 'pdb');
-        viewer.setStyle({}, {
-          cartoon: { color: 'spectrum', opacity: 0.9 },
-          stick: { radius: 0.15, colorscheme: 'greenCarbon' },
-        });
+        applyRenderingStyle(viewer, styleToApply);
       } else if (sequence) {
         const residues = sequence.split('');
         residues.forEach((_, i) => {
@@ -278,6 +297,15 @@ function MoleculeViewer({ pdbData, name, sequence, isRealData, pdbId, rcsbUrl }:
             <p className="text-[10px] text-muted-foreground font-mono truncate max-w-[200px]">{sequence}</p>
           )}
         </div>
+        {loaded && (
+          <div className="ml-2">
+            <RenderingStyleSelector
+              currentStyle={renderingStyle}
+              onStyleChange={handleStyleChange}
+              disabled={!loaded}
+            />
+          </div>
+        )}
         <div className="ml-auto flex items-center gap-2">
           {isRealData && pdbId && (
             <motion.a
