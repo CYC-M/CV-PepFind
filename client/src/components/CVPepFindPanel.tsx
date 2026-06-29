@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot, Send, Sparkles, Dna, Search, Zap, RotateCcw,
@@ -471,14 +471,14 @@ export default function CVPepFindPanel() {
               </div>
 
               {/* Bubble */}
-              <div className={`group max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-                <div className={`relative rounded-2xl px-3 py-2.5 text-sm leading-relaxed ${
+              <div className={`group flex-1 max-w-full ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col gap-1 min-w-0`}>
+                <div className={`relative rounded-2xl px-3 py-2.5 text-sm leading-relaxed break-words overflow-hidden ${
                   msg.role === 'user'
                     ? 'bg-accent/20 text-foreground border border-accent/20 rounded-tr-sm'
                     : 'bg-card border border-border rounded-tl-sm'
                 }`}>
                   {msg.role === 'assistant' ? (
-                    <div className="streamdown-content" role="article" aria-label="AI assistant response">
+                    <div className="streamdown-content overflow-hidden" role="article" aria-label="AI assistant response">
                       <Streamdown>{msg.content}</Streamdown>
                       {msg.streaming && (
                         <span className="inline-block w-0.5 h-3.5 bg-primary ml-0.5 animate-blink" aria-hidden="true" />

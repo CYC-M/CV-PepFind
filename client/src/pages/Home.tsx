@@ -10,6 +10,37 @@ import { SettingsPanel } from "@/components/SettingsPanel";
 import { AgentProvider } from "@/contexts/AgentContext";
 import { trpc } from "@/lib/trpc";
 import { useIsMobile } from "@/hooks/useMobile";
+import { useResizablePanel } from "@/hooks/useResizablePanel";
+
+// Resizable Sidebar Component
+function ResizableSidebar({ children }: { children: React.ReactNode }) {
+  const { widthPercent, isResizing, startResize } = useResizablePanel({
+    minPercent: 30,
+    maxPercent: 50,
+    defaultPercent: 40,
+    storageKey: 'cv-pepfind-sidebar-width',
+  });
+
+  return (
+    <div className="flex relative flex-shrink-0">
+      {/* Drag Handle */}
+      <div
+        onMouseDown={startResize}
+        className={`w-1 flex-shrink-0 bg-border hover:bg-primary/40 transition-colors cursor-col-resize ${
+          isResizing ? 'bg-primary/60' : ''
+        }`}
+        title="Drag to resize sidebar"
+      />
+      {/* Sidebar Content */}
+      <div
+        style={{ width: `${widthPercent}vw` }}
+        className="flex-shrink-0 border-l border-border bg-card/30 overflow-hidden flex flex-col"
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   const [showHistory, setShowHistory] = useState(false);
@@ -194,10 +225,10 @@ export default function Home() {
               )}
             </motion.div>
 
-            {/* ── Right Panel: CV-PepFind AI Agent ──────────────────────── */}
-            <div className="w-[360px] flex-shrink-0 border-l border-border bg-card/30 overflow-hidden">
+            {/* ── Right Panel: CV-PepFind AI Agent (Resizable) ──────────────────────── */}
+            <ResizableSidebar>
               <CVPepFindPanel />
-            </div>
+            </ResizableSidebar>
           </div>
         </div>
       </AgentProvider>

@@ -307,6 +307,56 @@
   color: oklch(0.68 0.15 200);
 }
 
+/* Streamdown content overflow handling */
+.streamdown-content {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Code blocks and pre-formatted text */
+.streamdown-content pre {
+  overflow-x: auto;
+  max-width: 100%;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.streamdown-content code {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Links */
+.streamdown-content a {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Tables */
+.streamdown-content table {
+  table-layout: auto;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.streamdown-content table td,
+.streamdown-content table th {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Lists */
+.streamdown-content ul,
+.streamdown-content ol {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.streamdown-content li {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
 
 /* ========== CV-PepFind Dynamic AI State Animations ========== */
 
