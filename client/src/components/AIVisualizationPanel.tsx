@@ -19,7 +19,21 @@ import { ViewControlPanel } from "./ViewControlPanel";
 import { resetView, toggleAutoSpin, startAutoSpin, stopAutoSpin } from "@/lib/viewControlManager";
 import { AtomTooltip } from "./AtomTooltip";
 import { getNearbyAtoms, highlightAtom, clearAtomHighlight, type AtomInfo } from "@/lib/atomHoverDetector";
+import MeasurementTool from "./MeasurementTool";
+import {
+  addAtomToSelection,
+  clearSelection,
+  createMeasurement,
+  convertMeasurement,
+  type Measurement,
+  type MeasurementState,
+  initializeMeasurementState,
+  toggleMeasurementMode,
+  addMeasurement,
+  clearMeasurements,
+} from "@/lib/measurementTool";
 import { toast } from "sonner";
+import { findClosestAtom, getAllAtoms, highlightAtomForMeasurement, drawMeasurementLine, getAtomColor } from "@/lib/atomClickDetector";
 
 // ─── 3Dmol.js 类型声明 ────────────────────────────────────────────────────────
 interface Mol3DViewer {
@@ -194,6 +208,10 @@ function MoleculeViewer({ pdbData, name, sequence, isRealData, pdbId, rcsbUrl }:
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipEnabled, setTooltipEnabled] = useState(true);
   const [nearbyAtoms, setNearbyAtoms] = useState<AtomInfo[]>([]);
+  const [measurementState, setMeasurementState] = useState<MeasurementState>(
+    initializeMeasurementState()
+  );
+  const [measurementUnit, setMeasurementUnit] = useState<'angstrom' | 'nanometer'>('angstrom');
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -293,6 +311,92 @@ function MoleculeViewer({ pdbData, name, sequence, isRealData, pdbId, rcsbUrl }:
     }
   }, [renderingStyle]);
 
+  // Measurement tool handlers
+  const handleToggleMeasurement = useCallback(() => {
+    setMeasurementState((prev) => toggleMeasurementMode(prev));
+  }, []);
+
+  const handleClearMeasurements = useCallback(() => {
+    setMeasurementState((prev) => clearMeasurements(prev));
+  }, []);
+
+  const handleMeasurementUnitChange = useCallback(
+    (newUnit: 'angstrom' | 'nanometer') => {
+      setMeasurementUnit(newUnit);
+      setMeasurementState((prev) => ({
+        ...prev,
+        measurements: prev.measurements.map((m) => convertMeasurement(m, newUnit)),
+        lastMeasurement: prev.lastMeasurement ? convertMeasurement(prev.lastMeasurement, newUnit) : null,
+      }));
+    },
+    []
+  );
+
+
+  const handleAtomClick = useCallback(
+    (atom: AtomInfo) => {
+      if (!measurementState.isActive) return;
+
+      const newSelection = addAtomToSelection(measurementState.selectedAtoms, atom, 2);
+      setMeasurementState((prev) => ({
+        ...prev,
+        selectedAtoms: newSelection,
+      }));
+
+      if (newSelection.length === 2) {
+        const measurement = createMeasurement(newSelection[0], newSelection[1], measurementUnit);
+        setMeasurementState((prev) => addMeasurement(prev, measurement));
+        toast.success(`Distance: ${measurement.distance.toFixed(2)} ${measurementUnit === 'angstrom' ? 'Å' : 'nm'}`);
+        setTimeout(() => {
+          setMeasurementState((prev) => ({
+            ...prev,
+            selectedAtoms: [],
+          }));
+        }, 500);
+      }
+    },
+    [measurementState.isActive, measurementState.selectedAtoms, measurementUnit]
+  );
+  // Handle atom click for measurement
+  const handleContainerClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!measurementState.isActive || !viewer3DRef.current) return;
+
+      const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const atoms = getAllAtoms(viewer3DRef.current);
+      const closestAtom = findClosestAtom(
+        mouseX,
+        mouseY,
+        atoms,
+        viewer3DRef.current,
+        rect.width,
+        rect.height,
+        25
+      );
+
+      if (closestAtom) {
+        handleAtomClick(closestAtom);
+        // Highlight selected atom
+        const color = getAtomColor(closestAtom.element);
+        highlightAtomForMeasurement(viewer3DRef.current, closestAtom, color);
+
+        // Draw line if two atoms selected
+        if (measurementState.selectedAtoms.length === 2) {
+          drawMeasurementLine(
+            viewer3DRef.current,
+            measurementState.selectedAtoms[0],
+            closestAtom,
+            '0x00FF00'
+          );
+        }
+      }
+    },
+    [measurementState.isActive, measurementState.selectedAtoms, handleAtomClick]
+  );
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -315,6 +419,9 @@ function MoleculeViewer({ pdbData, name, sequence, isRealData, pdbId, rcsbUrl }:
       } else if (e.key === 'h' || e.key === 'H') {
         e.preventDefault();
         setTooltipEnabled(!tooltipEnabled);
+      } else if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        handleToggleMeasurement();
       }
     };
 
@@ -445,6 +552,17 @@ function MoleculeViewer({ pdbData, name, sequence, isRealData, pdbId, rcsbUrl }:
               disabled={!loaded}
             />
             <div className="w-px h-6 bg-border/50" />
+            <MeasurementTool
+              isActive={measurementState.isActive}
+              measurements={measurementState.measurements}
+              selectedAtomCount={measurementState.selectedAtoms.length}
+              onToggle={handleToggleMeasurement}
+              onClear={handleClearMeasurements}
+              onExport={() => {}}
+              onUnitChange={handleMeasurementUnitChange}
+              currentUnit={measurementUnit}
+            />
+            <div className="w-px h-6 bg-border/50" />
             <ViewControlPanel
               onResetView={handleResetView}
               onToggleAutoSpin={handleToggleAutoSpin}
@@ -495,6 +613,7 @@ function MoleculeViewer({ pdbData, name, sequence, isRealData, pdbId, rcsbUrl }:
         className="flex-1 relative"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
+        onClick={handleContainerClick}
       >
         {!loaded && !error && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
