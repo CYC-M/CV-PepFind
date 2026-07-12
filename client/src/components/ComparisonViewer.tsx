@@ -13,6 +13,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Maximize2, Minimize2, Dna } from 'lucide-react';
+import { SequenceAlignmentView } from "./SequenceAlignmentView";
+import { type AlignmentResult, type SimilarityScore } from "@/lib/sequenceAlignment";
 
 interface Mol3DViewer {
   addModel: (data: string, format: string) => void;
@@ -46,6 +48,9 @@ export default function ComparisonViewer({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [candidateLoaded, setCandidateLoaded] = useState(false);
   const [referenceLoaded, setReferenceLoaded] = useState(false);
+  const [alignment, setAlignment] = useState<AlignmentResult | null>(null);
+  const [similarity, setSimilarity] = useState<SimilarityScore | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
 
   // Initialize 3Dmol viewers
   useEffect(() => {
@@ -87,6 +92,7 @@ export default function ComparisonViewer({
 
     initViewers();
   }, [candidatePdbData, referencePdbData]);
+
 
   return (
     <motion.div
