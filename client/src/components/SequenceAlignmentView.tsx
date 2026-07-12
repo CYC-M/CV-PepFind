@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ColoredAlignmentDisplay } from './ColoredAlignmentDisplay';
 import type { AlignmentResult, RMSDResult, SimilarityScore } from '@/lib/sequenceAlignment';
 import { formatAlignmentForDisplay, getAlignmentStats } from '@/lib/sequenceAlignment';
 
@@ -107,11 +108,7 @@ export function SequenceAlignmentView({
 
           {/* Alignment View */}
           <TabsContent value="alignment" className="space-y-2">
-            <ScrollArea className="w-full h-64 border rounded-lg p-4 bg-muted/50">
-              <pre className="font-mono text-xs whitespace-pre-wrap break-words">
-                {formattedAlignment}
-              </pre>
-            </ScrollArea>
+            <ColoredAlignmentDisplay alignment={alignment} />
           </TabsContent>
 
           {/* Sequences View */}
