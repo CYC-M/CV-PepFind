@@ -14,6 +14,7 @@ import { runPipeline, validateSequence } from "./pipeline";
 import { retrievePeptidesFromUniProt, searchPeptidesBySequence, formatRetrievalResultsForLLM } from "./peptideRetrieval";
 import { lookupPdbStructure, lookupPdbById, searchPdbIdsBySequence, fetchPdbMetadata, fetchPdbFile } from "./pdbRetrieval";
 import { invokeLLM } from "./_core/llm";
+import { designTaskRouter } from "./designTaskRouter";
 import type { Request, Response } from "express";
 import type { Express } from "express";
 
@@ -217,6 +218,7 @@ export const appRouter = router({
         return lookupPdbStructure(input.query);
       }),
   }),
+  designTask: designTaskRouter,
 });
 
 export type AppRouter = typeof appRouter;
