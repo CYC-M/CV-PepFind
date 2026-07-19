@@ -7,6 +7,7 @@ import {
 import CVPepFindPanel from "@/components/CVPepFindPanel";
 import AIVisualizationPanel from "@/components/AIVisualizationPanel";
 import { SettingsPanel } from "@/components/SettingsPanel";
+import { AutonomousDesignPanel } from "@/components/AutonomousDesignPanel";
 import { AgentProvider } from "@/contexts/AgentContext";
 import { trpc } from "@/lib/trpc";
 import { useIsMobile } from "@/hooks/useMobile";
@@ -46,7 +47,7 @@ export default function Home() {
   const [showHistory, setShowHistory] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [vizCollapsed, setVizCollapsed] = useState(false);
-  const [mobileTab, setMobileTab] = useState<'viz' | 'agent'>('agent');
+  const [mobileTab, setMobileTab] = useState<'viz' | 'agent' | 'design'>('agent');
 
   const isMobile = useIsMobile();
   const { data: history } = trpc.peptide.history.useQuery({ limit: 20 });
@@ -332,6 +333,18 @@ export default function Home() {
                   <CVPepFindPanel />
                 </motion.div>
               )}
+
+              {mobileTab === 'design' && (
+                <motion.div
+                  key="design"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="h-full overflow-y-auto p-4"
+                >
+                  <AutonomousDesignPanel />
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
 
@@ -359,6 +372,18 @@ export default function Home() {
             >
               <MessageSquare className="w-5 h-5" />
               <span className="text-[10px] font-medium">AI 助手</span>
+            </button>
+
+            <button
+              onClick={() => setMobileTab('design')}
+              className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-all ${
+                mobileTab === 'design'
+                  ? 'bg-primary/15 text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Sparkles className="w-5 h-5" />
+              <span className="text-[10px] font-medium">设计</span>
             </button>
           </div>
         </div>
