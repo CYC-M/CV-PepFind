@@ -270,3 +270,21 @@
 - [ ] 测试：序列引擎单元测试
 - [ ] 测试：结构引擎单元测试
 - [ ] 测试：设计任务管理单元测试
+
+
+## 多肽可视化系统（已完成）
+- [x] 后端：实现 3D 结构预测 API（ESMFold 占位符）- peptideVisualization.ts
+- [x] 后端：实现序列性质分析 API（疏水性、电荷、极性）
+- [x] 后端：实现二级结构预测 API
+- [x] 后端：实现结果缓存机制
+- [x] 后端：tRPC 路由注册 - peptideVisualizationRouter.ts
+- [x] 前端：创建可视化弹窗组件 - PeptideVisualizationModal.tsx
+- [x] 前端：创建序列性质分析图表
+- [x] 前端：创建二级结构预测展示
+- [x] 前端：实现全局序列链接处理 - PeptideLink.tsx
+- [x] 前端：在 AI 聊天回复中渲染可点击序列 - AIChatBox.tsx 集成
+- [x] 前端：在设计任务候选列表中添加序列链接 - AutonomousDesignPanel.tsx 集成
+- [x] 前端：在对齐结果中添加序列链接 - SequenceAlignmentView.tsx 集成
+- [ ] 前端：创建 3D 结构查看器（使用 3Dmol.js）
+- [ ] 测试：多肽可视化单元测试
+- [ ] 优化：网络适配和缓存策略

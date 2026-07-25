@@ -12,6 +12,7 @@ import { Slider } from '@/components/ui/slider';
 import { Progress } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/spinner';
 import { trpc } from '@/lib/trpc';
+import { PeptideLink } from './PeptideLink';
 
 interface DesignConfig {
   targetProtein: string;
@@ -483,7 +484,9 @@ export function AutonomousDesignPanel() {
                   {candidates.map((candidate, idx) => (
                     <tr key={idx} className="border-b hover:bg-muted/50">
                       <td className="py-2 px-2">{candidate.rank}</td>
-                      <td className="py-2 px-2 font-mono text-xs">{candidate.sequence}</td>
+                      <td className="py-2 px-2 font-mono text-xs">
+                        <PeptideLink sequence={candidate.sequence} />
+                      </td>
                       <td className="text-right py-2 px-2">{candidate.sequenceScore.toFixed(2)}</td>
                       <td className="text-right py-2 px-2">{candidate.affinityScore.toFixed(2)}</td>
                       <td className="text-right py-2 px-2 font-semibold">{candidate.combinedScore.toFixed(2)}</td>

@@ -15,6 +15,7 @@ import { retrievePeptidesFromUniProt, searchPeptidesBySequence, formatRetrievalR
 import { lookupPdbStructure, lookupPdbById, searchPdbIdsBySequence, fetchPdbMetadata, fetchPdbFile } from "./pdbRetrieval";
 import { invokeLLM } from "./_core/llm";
 import { designTaskRouter } from "./designTaskRouter";
+import { peptideVisualizationRouter } from "./peptideVisualizationRouter";
 import type { Request, Response } from "express";
 import type { Express } from "express";
 
@@ -219,6 +220,7 @@ export const appRouter = router({
       }),
   }),
   designTask: designTaskRouter,
+  peptideVisualization: peptideVisualizationRouter,
 });
 
 export type AppRouter = typeof appRouter;

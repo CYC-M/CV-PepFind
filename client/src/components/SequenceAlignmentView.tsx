@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ColoredAlignmentDisplay } from './ColoredAlignmentDisplay';
+import { PeptideLink } from './PeptideLink';
 import type { AlignmentResult, RMSDResult, SimilarityScore } from '@/lib/sequenceAlignment';
 import { formatAlignmentForDisplay, getAlignmentStats } from '@/lib/sequenceAlignment';
 
@@ -116,13 +117,17 @@ export function SequenceAlignmentView({
             <div className="space-y-2">
               <div className="text-sm font-semibold">Candidate Sequence</div>
               <ScrollArea className="w-full h-20 border rounded-lg p-3 bg-muted/50">
-                <code className="text-xs font-mono break-all">{alignment.seq1}</code>
+                <code className="text-xs font-mono break-all">
+                  <PeptideLink sequence={alignment.seq1} />
+                </code>
               </ScrollArea>
             </div>
             <div className="space-y-2">
               <div className="text-sm font-semibold">Reference Sequence</div>
               <ScrollArea className="w-full h-20 border rounded-lg p-3 bg-muted/50">
-                <code className="text-xs font-mono break-all">{alignment.seq2}</code>
+                <code className="text-xs font-mono break-all">
+                  <PeptideLink sequence={alignment.seq2} />
+                </code>
               </ScrollArea>
             </div>
           </TabsContent>
