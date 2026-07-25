@@ -288,3 +288,22 @@
 - [ ] 前端：创建 3D 结构查看器（使用 3Dmol.js）
 - [ ] 测试：多肽可视化单元测试
 - [ ] 优化：网络适配和缓存策略
+
+
+## Work 界面 - 多肽自主设计 Agent（新增）
+- [x] 前端：修改 Home.tsx 添加 Chat/Work 标签页切换 - 桥台和手机视图
+- [x] 前端：创建 WorkAgent.tsx 主组件
+- [x] 前端：修复移动端导航映射错误 - 仅保留 Chat/Work 两个标签
+- [x] 前端：将 WorkAgent 接入真实后端 API - designTask 路由集成
+- [x] 前端：任务配置面板 - 已在 WorkAgent 中实现
+- [x] 前端：进度监控面板 - 已在 WorkAgent 中实现
+- [x] 前端：结果展示面板 - 已在 WorkAgent 中实现
+- [x] 后端：使用现有 designTaskQueue.ts 作为工作流引擎
+- [x] 后端：使用现有 designTaskRouter.ts tRPC 路由
+- [x] 后端：多维度多肽评分 - 已在 designTaskQueue 中实现
+- [x] 后端：Agent 决策逻辑 - 已在 designTaskQueue 中实现
+- [x] 前端：实现实时进度更新 - 或轮询機制已实现
+- [x] 前端：实现任务暂停/恢复/取消功能 - 已实现
+- [x] 前端：添加结果导出 - 已实现
+- [ ] 测试：WorkAgent 集成测试
+- [ ] 优化：UI 响应性和性能优化

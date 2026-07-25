@@ -7,7 +7,7 @@ import {
 import CVPepFindPanel from "@/components/CVPepFindPanel";
 import AIVisualizationPanel from "@/components/AIVisualizationPanel";
 import { SettingsPanel } from "@/components/SettingsPanel";
-import { AutonomousDesignPanel } from "@/components/AutonomousDesignPanel";
+import { WorkAgent } from "@/components/WorkAgent";
 import { AgentProvider } from "@/contexts/AgentContext";
 import { trpc } from "@/lib/trpc";
 import { useIsMobile } from "@/hooks/useMobile";
@@ -47,7 +47,8 @@ export default function Home() {
   const [showHistory, setShowHistory] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [vizCollapsed, setVizCollapsed] = useState(false);
-  const [mobileTab, setMobileTab] = useState<'viz' | 'agent' | 'design'>('agent');
+  const [desktopTab, setDesktopTab] = useState<'chat' | 'work'>('chat');
+  const [mobileTab, setMobileTab] = useState<'chat' | 'work'>('chat');
 
   const isMobile = useIsMobile();
   const { data: history } = trpc.peptide.history.useQuery({ limit: 20 });
@@ -226,9 +227,37 @@ export default function Home() {
               )}
             </motion.div>
 
-            {/* ── Right Panel: CV-PepFind AI Agent (Resizable) ──────────────────────── */}
+            {/* ── Right Panel: Chat/Work Toggle (Resizable) ──────────────────────── */}
             <ResizableSidebar>
-              <CVPepFindPanel />
+              <div className="flex flex-col h-full">
+                {/* Tab Navigation */}
+                <div className="flex-shrink-0 border-b border-border bg-card/50 flex items-center gap-1 px-2 py-2">
+                  <button
+                    onClick={() => setDesktopTab('chat')}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      desktopTab === 'chat'
+                        ? 'bg-primary/15 text-primary'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Chat
+                  </button>
+                  <button
+                    onClick={() => setDesktopTab('work')}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      desktopTab === 'work'
+                        ? 'bg-primary/15 text-primary'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Work
+                  </button>
+                </div>
+                {/* Tab Content */}
+                <div className="flex-1 overflow-hidden">
+                  {desktopTab === 'chat' ? <CVPepFindPanel /> : <WorkAgent />}
+                </div>
+              </div>
             </ResizableSidebar>
           </div>
         </div>
@@ -310,39 +339,27 @@ export default function Home() {
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-hidden">
             <AnimatePresence mode="wait">
-              {mobileTab === 'viz' && (
+              {mobileTab === 'chat' && (
                 <motion.div
-                  key="viz"
+                  key="chat"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
-                  className="h-full overflow-hidden"
-                >
-                  <AIVisualizationPanel />
-                </motion.div>
-              )}
-
-              {mobileTab === 'agent' && (
-                <motion.div
-                  key="agent"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
                   className="h-full overflow-hidden"
                 >
                   <CVPepFindPanel />
                 </motion.div>
               )}
 
-              {mobileTab === 'design' && (
+              {mobileTab === 'work' && (
                 <motion.div
-                  key="design"
+                  key="work"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="h-full overflow-y-auto p-4"
+                  className="h-full overflow-hidden"
                 >
-                  <AutonomousDesignPanel />
+                  <WorkAgent />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -351,39 +368,27 @@ export default function Home() {
           {/* ── Tab Navigation ──────────────────────────────────────────── */}
           <div className="flex-shrink-0 border-t border-border bg-card/50 backdrop-blur-sm flex items-center justify-around h-14 px-2 gap-1">
             <button
-              onClick={() => setMobileTab('viz')}
+              onClick={() => setMobileTab('chat')}
               className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-all ${
-                mobileTab === 'viz'
-                  ? 'bg-primary/15 text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Eye className="w-5 h-5" />
-              <span className="text-[10px] font-medium">可视化</span>
-            </button>
-
-            <button
-              onClick={() => setMobileTab('agent')}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-all ${
-                mobileTab === 'agent'
+                mobileTab === 'chat'
                   ? 'bg-primary/15 text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <MessageSquare className="w-5 h-5" />
-              <span className="text-[10px] font-medium">AI 助手</span>
+              <span className="text-[10px] font-medium">Chat</span>
             </button>
 
             <button
-              onClick={() => setMobileTab('design')}
+              onClick={() => setMobileTab('work')}
               className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-all ${
-                mobileTab === 'design'
+                mobileTab === 'work'
                   ? 'bg-primary/15 text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Sparkles className="w-5 h-5" />
-              <span className="text-[10px] font-medium">设计</span>
+              <Dna className="w-5 h-5" />
+              <span className="text-[10px] font-medium">Work</span>
             </button>
           </div>
         </div>
