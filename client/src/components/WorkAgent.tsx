@@ -186,8 +186,8 @@ export function WorkAgent() {
           minAffinityScore: -0.6,
         },
         generationStrategy: 'hybrid',
-        maxIterations: taskConfig.maxIterations,
-        topCandidates: taskConfig.topCandidates,
+        maxIterations: Math.min(taskConfig.maxIterations, 100),
+        topCandidates: Math.min(taskConfig.topCandidates, 50),
       });
 
       const currentPhase = getCurrentPhase(0);
