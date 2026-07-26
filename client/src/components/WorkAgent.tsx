@@ -182,7 +182,7 @@ export function WorkAgent() {
           maxLength: 50,
           maxCharge: 5,
           maxInstabilityIndex: 40,
-          minSequenceScore: -0.5,
+          minSequenceScore: 0.5,
           minAffinityScore: -0.6,
         },
         generationStrategy: 'hybrid',
