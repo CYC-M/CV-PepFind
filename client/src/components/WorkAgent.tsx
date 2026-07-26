@@ -67,7 +67,7 @@ export function WorkAgent() {
     targetProtein: 'IL6',
     targetSequence: 'MNSFSTSAFAAQLNDNEGK',
     requirements: '高亲和力、低毒性、稳定性强',
-    maxIterations: 100,
+    maxIterations: 10,
     topCandidates: 10,
   });
   const [expandedLogIndex, setExpandedLogIndex] = useState<number | null>(null);
