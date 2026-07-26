@@ -3,7 +3,7 @@
  * Long-running agent that autonomously designs high-affinity peptides based on user requirements
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,9 +14,20 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
-import { AlertCircle, Play, Pause, Square, Download, RefreshCw } from 'lucide-react';
+import { AlertCircle, Play, Pause, Square, Download, RefreshCw, CheckCircle2, Circle } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { PeptideLink } from './PeptideLink';
+
+type DesignPhase = 'initialization' | 'generation' | 'evaluation' | 'optimization' | 'refinement' | 'completion';
+
+const DESIGN_PHASES: Record<DesignPhase, { label: string; description: string; color: string; icon: string }> = {
+  initialization: { label: '初始化', description: '准备设计环境和参数', color: 'from-blue-500 to-blue-600', icon: '⚙️' },
+  generation: { label: '序列生成', description: '生成候选多肽序列', color: 'from-purple-500 to-purple-600', icon: '🧬' },
+  evaluation: { label: '评估评分', description: '评估候选序列的性质和亲和力', color: 'from-pink-500 to-pink-600', icon: '📊' },
+  optimization: { label: '优化迭代', description: '通过遗传算法优化序列', color: 'from-orange-500 to-orange-600', icon: '🔄' },
+  refinement: { label: '精细化', description: '微调最优候选序列', color: 'from-green-500 to-green-600', icon: '✨' },
+  completion: { label: '完成', description: '生成最终报告', color: 'from-emerald-500 to-emerald-600', icon: '✅' },
+};
 
 interface WorkAgentTask {
   taskId: string;
@@ -28,6 +39,8 @@ interface WorkAgentTask {
   iteration: number;
   totalIterations: number;
   candidatesFound: number;
+  currentPhase: DesignPhase;
+  phaseProgress: number;
   topCandidates: Array<{
     rank: number;
     sequence: string;
@@ -64,14 +77,36 @@ export function WorkAgent() {
   const [isPaused, setIsPaused] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 根据进度计算当前阶段
+  const getCurrentPhase = (progress: number): DesignPhase => {
+    if (progress < 15) return 'initialization';
+    if (progress < 30) return 'generation';
+    if (progress < 50) return 'evaluation';
+    if (progress < 75) return 'optimization';
+    if (progress < 95) return 'refinement';
+    return 'completion';
+  };
+
+  // 计算阶段内的进度百分比
+  const getPhaseProgress = (progress: number, phase: DesignPhase): number => {
+    const phaseRanges: Record<DesignPhase, [number, number]> = {
+      initialization: [0, 15],
+      generation: [15, 30],
+      evaluation: [30, 50],
+      optimization: [50, 75],
+      refinement: [75, 95],
+      completion: [95, 100],
+    };
+    const [start, end] = phaseRanges[phase];
+    return Math.min(100, Math.max(0, ((progress - start) / (end - start)) * 100));
+  };
+
   // tRPC mutations and queries
   const createTaskMutation = trpc.designTask.create.useMutation();
-  const getTaskStatusQuery = trpc.designTask.getStatus.useQuery;
   const startTaskMutation = trpc.designTask.start.useMutation();
   const pauseTaskMutation = trpc.designTask.pause.useMutation();
   const resumeTaskMutation = trpc.designTask.resume.useMutation();
   const cancelTaskMutation = trpc.designTask.cancel.useMutation();
-  const getCandidatesQuery = trpc.designTask.getCandidates.useQuery;
 
   // Poll task status
   useEffect(() => {
@@ -79,7 +114,6 @@ export function WorkAgent() {
 
     const pollInterval = setInterval(async () => {
       try {
-        // Use query instead of mutation for status polling
         const utils = trpc.useUtils();
         const status = await utils.designTask.getStatus.fetch({ taskId: task.taskId });
         
@@ -87,19 +121,30 @@ export function WorkAgent() {
           setTask((prev) => {
             if (!prev) return null;
             
+            const newPhase = getCurrentPhase(status.progress);
+            const phaseProgress = getPhaseProgress(status.progress, newPhase);
+            const phaseChanged = newPhase !== prev.currentPhase;
+            
             return {
               ...prev,
               progress: status.progress,
               iteration: status.iteration,
               candidatesFound: status.candidatesFound,
+              currentPhase: newPhase,
+              phaseProgress,
               topCandidates: prev.topCandidates,
               elapsedTime: Date.now() - prev.startTime,
               estimatedTimeRemaining: Math.max(0, (100 - status.progress) / 100 * (Date.now() - prev.startTime) / (status.progress / 100 || 1)),
               logs: [
                 ...prev.logs.slice(-99),
+                ...(phaseChanged ? [{
+                  timestamp: Date.now(),
+                  level: 'success' as const,
+                  message: `进入阶段: ${DESIGN_PHASES[newPhase].label} - ${DESIGN_PHASES[newPhase].description}`,
+                }] : []),
                 {
                   timestamp: Date.now(),
-                  level: 'info',
+                  level: 'info' as const,
                   message: `迭代 ${status.iteration}: 已评估 ${status.candidatesFound} 个候选多肽`,
                 },
               ],
@@ -142,6 +187,7 @@ export function WorkAgent() {
       // Start the task
       await startTaskMutation.mutateAsync({ taskId: newTask.taskId });
 
+      const currentPhase = getCurrentPhase(0);
       setTask({
         taskId: newTask.taskId,
         status: 'running',
@@ -152,6 +198,8 @@ export function WorkAgent() {
         iteration: 0,
         totalIterations: taskConfig.maxIterations,
         candidatesFound: 0,
+        currentPhase,
+        phaseProgress: 0,
         topCandidates: [],
         startTime: Date.now(),
         elapsedTime: 0,
@@ -159,8 +207,13 @@ export function WorkAgent() {
         logs: [
           {
             timestamp: Date.now(),
-            level: 'info',
+            level: 'info' as const,
             message: `开始设计多肽：靶点=${taskConfig.targetProtein}，需求=${taskConfig.requirements}`,
+          },
+          {
+            timestamp: Date.now(),
+            level: 'info' as const,
+            message: `阶段 1/6: ${DESIGN_PHASES[currentPhase].label} - ${DESIGN_PHASES[currentPhase].description}`,
           },
         ],
       });
@@ -179,11 +232,9 @@ export function WorkAgent() {
 
     try {
       if (isPaused) {
-        // Resume
         await resumeTaskMutation.mutateAsync({ taskId: task.taskId });
         setIsPaused(false);
       } else {
-        // Pause
         await pauseTaskMutation.mutateAsync({ taskId: task.taskId });
         setIsPaused(true);
       }
@@ -342,14 +393,58 @@ export function WorkAgent() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* 当前设计阶段 */}
+            <div className="space-y-3 p-3 rounded-lg bg-gradient-to-r from-background to-muted/50 border border-border">
+              <div className="flex items-center gap-3">
+                <div className={`text-2xl`}>{DESIGN_PHASES[task.currentPhase].icon}</div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-foreground">{DESIGN_PHASES[task.currentPhase].label}</h3>
+                      <p className="text-xs text-muted-foreground">{DESIGN_PHASES[task.currentPhase].description}</p>
+                    </div>
+                    <span className="text-sm font-mono font-bold text-primary">{task.phaseProgress.toFixed(0)}%</span>
+                  </div>
+                  <Progress value={task.phaseProgress} className="h-2 mt-2" />
+                </div>
+              </div>
+            </div>
+
+            {/* 阶段进度指示器 */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground">设计流程</p>
+              <div className="flex gap-1">
+                {(Object.keys(DESIGN_PHASES) as DesignPhase[]).map((phase, idx) => {
+                  const phaseStart = (idx / 6) * 100;
+                  const isCompleted = task.progress >= phaseStart + (100 / 6);
+                  const isActive = phase === task.currentPhase;
+                  return (
+                    <div key={phase} className="flex-1 flex flex-col items-center gap-1">
+                      <div
+                        className={`w-full h-2 rounded-full transition-all ${
+                          isCompleted || isActive
+                            ? `bg-gradient-to-r ${DESIGN_PHASES[phase].color}`
+                            : 'bg-muted'
+                        }`}
+                        title={DESIGN_PHASES[phase].label}
+                      />
+                      <span className="text-[10px] text-muted-foreground text-center">{DESIGN_PHASES[phase].label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 总体进度 */}
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>总体进度</span>
-                <span className="font-mono">{task.progress.toFixed(1)}%</span>
+                <span className="font-mono font-bold">{task.progress.toFixed(1)}%</span>
               </div>
-              <Progress value={task.progress} />
+              <Progress value={task.progress} className="h-2" />
             </div>
 
+            {/* 统计信息 */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <div className="bg-muted p-2 rounded">
                 <div className="text-xs text-muted-foreground">迭代</div>
@@ -369,6 +464,7 @@ export function WorkAgent() {
               </div>
             </div>
 
+            {/* 控制按钮 */}
             <div className="flex gap-2">
               <Button
                 onClick={handlePauseTask}
