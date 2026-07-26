@@ -5,13 +5,15 @@
 
 import { analyzeSequence } from './sequenceEngine';
 import { batchDocking } from './structureEngine';
-import { executeDesignIteration } from './designExecutor';
+import { executeDesignIteration, type DesignExecutionContext } from './designExecutor';
+import { generatePeptideSequences } from './llmSequenceGenerator';
 
 export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'paused';
 
 export interface DesignTaskConfig {
   targetProtein: string;
   targetSequence: string;
+  requirements?: string;
   designParameters: {
     minLength: number;
     maxLength: number;
@@ -24,6 +26,8 @@ export interface DesignTaskConfig {
   maxIterations: number;
   topCandidates: number;
 }
+
+export type DesignTaskConfigInput = Partial<DesignTaskConfig> & { targetProtein: string };
 
 export interface DesignCandidate {
   sequence: string;
@@ -158,7 +162,7 @@ function emitTaskEvent(event: DesignTaskEvent) {
 }
 
 /**
- * Run design task (async)
+ * Run design task (async) - Using real LLM-based design engine
  */
 export async function runDesignTask(taskId: string): Promise<void> {
   const task = taskStore.get(taskId);
@@ -170,121 +174,55 @@ export async function runDesignTask(taskId: string): Promise<void> {
   task.startTime = Date.now();
 
   try {
-    const candidates: DesignCandidate[] = [];
     const { config } = task;
+    const candidates: DesignCandidate[] = [];
 
+    // Create execution context for design iterations
+    const context: DesignExecutionContext = {
+      taskId,
+      config,
+      iteration: 0,
+      candidates: [],
+      onProgress: (progress: number, iteration: number, candidatesFound: number) => {
+        task.iteration = iteration;
+        task.progress = progress;
+        
+        emitTaskEvent({
+          type: 'progress',
+          taskId,
+          data: {
+            iteration,
+            progress,
+            candidatesFound,
+          },
+          timestamp: Date.now(),
+        });
+      },
+      onCandidate: (candidate: DesignCandidate) => {
+        candidates.push(candidate);
+        
+        // Sort and keep top candidates
+        candidates.sort((a, b) => b.combinedScore - a.combinedScore);
+        task.candidates = candidates.slice(0, config.topCandidates);
+        
+        emitTaskEvent({
+          type: 'candidate',
+          taskId,
+          data: candidate,
+          timestamp: Date.now(),
+        });
+      },
+      onLog: (message: string, details?: any) => {
+        console.log(`[${taskId}] ${message}`, details);
+      },
+    };
+
+    // Run design iterations
     for (let iter = 0; iter < config.maxIterations; iter++) {
       // Check if task was cancelled
       if ((task.status as TaskStatus) === 'failed') {
         throw new Error(task.error || 'Task was cancelled');
       }
-
-      task.iteration = iter + 1;
-      task.progress = Math.round(((iter + 1) / config.maxIterations) * 100);
-
-      // Generate batch of sequences
-      const batchSize = 10;
-      const sequences: string[] = [];
-
-      for (let i = 0; i < batchSize; i++) {
-        const length =
-          config.designParameters.minLength +
-          Math.floor(
-            Math.random() *
-              (config.designParameters.maxLength - config.designParameters.minLength + 1)
-          );
-
-        let sequence: string;
-        if (config.generationStrategy === 'random') {
-          sequence = generateRandomSequence(length);
-        } else if (config.generationStrategy === 'optimization') {
-          sequence = generateOptimizedSequence(config.targetSequence, length);
-        } else {
-          // hybrid
-          sequence =
-            Math.random() < 0.5
-              ? generateRandomSequence(length)
-              : generateOptimizedSequence(config.targetSequence, length);
-        }
-
-        sequences.push(sequence);
-      }
-
-      // Score sequences with sequence engine
-      const scoredSequences = sequences
-        .map(seq => {
-          try {
-            const seqScore = analyzeSequence(seq);
-            return {
-              sequence: seq,
-              sequenceScore: seqScore.overallScore,
-            };
-          } catch {
-            return null;
-          }
-        })
-        .filter((item): item is { sequence: string; sequenceScore: number } => item !== null);
-
-      // Filter by sequence criteria
-      const filteredSequences = scoredSequences.filter(item => {
-        const seqScore = analyzeSequence(item.sequence);
-        return (
-          seqScore.charge <= config.designParameters.maxCharge &&
-          seqScore.instabilityIndex <= config.designParameters.maxInstabilityIndex &&
-          item.sequenceScore >= config.designParameters.minSequenceScore
-        );
-      });
-
-      // Dock filtered sequences
-      if (filteredSequences.length > 0) {
-        const dockingResults = batchDocking(
-          filteredSequences.map(s => s.sequence),
-          config.targetSequence
-        );
-
-        for (const result of dockingResults) {
-          if (result.score.affinity >= config.designParameters.minAffinityScore) {
-            const candidate: DesignCandidate = {
-              sequence: result.peptide,
-              sequenceScore: filteredSequences.find(s => s.sequence === result.peptide)
-                ?.sequenceScore || 0,
-              affinityScore: result.score.affinity,
-              combinedScore:
-                (filteredSequences.find(s => s.sequence === result.peptide)?.sequenceScore || 0) *
-                  0.3 +
-                result.score.affinity * 0.7,
-              rank: candidates.length + 1,
-              timestamp: Date.now(),
-            };
-
-            candidates.push(candidate);
-
-            // Emit candidate event
-            emitTaskEvent({
-              type: 'candidate',
-              taskId,
-              data: candidate,
-              timestamp: Date.now(),
-            });
-          }
-        }
-      }
-
-      // Emit progress event
-      emitTaskEvent({
-        type: 'progress',
-        taskId,
-        data: {
-          iteration: task.iteration,
-          progress: task.progress,
-          candidatesFound: candidates.length,
-        },
-        timestamp: Date.now(),
-      });
-
-      // Sort candidates by combined score
-      candidates.sort((a, b) => b.combinedScore - a.combinedScore);
-      task.candidates = candidates.slice(0, config.topCandidates);
 
       // Allow task pause/resume
       while ((task.status as TaskStatus) === 'paused') {
@@ -296,6 +234,19 @@ export async function runDesignTask(taskId: string): Promise<void> {
         throw new Error(task.error || 'Task was cancelled');
       }
 
+      context.iteration = iter + 1;
+      
+      // Execute one design iteration using LLM engine
+      try {
+        await executeDesignIteration(context);
+      } catch (err) {
+        console.error(`Design iteration ${iter + 1} failed:`, err);
+        // Continue with next iteration even if one fails
+      }
+
+      // Update progress
+      task.progress = Math.round(((iter + 1) / config.maxIterations) * 100);
+      
       // Yield to event loop
       await new Promise(resolve => setTimeout(resolve, 10));
     }

@@ -15,6 +15,7 @@ import {
   exportCandidatesAsCSV,
   subscribeToTask,
   type DesignTaskConfig,
+  type DesignTaskConfigInput,
 } from './designTaskQueue';
 
 const DesignParametersSchema = z.object({
@@ -28,11 +29,12 @@ const DesignParametersSchema = z.object({
 
 const DesignTaskConfigSchema = z.object({
   targetProtein: z.string().min(1),
-  targetSequence: z.string().min(5),
-  designParameters: DesignParametersSchema,
-  generationStrategy: z.enum(['random', 'optimization', 'hybrid']),
-  maxIterations: z.number().min(1).max(100),
-  topCandidates: z.number().min(1).max(50),
+  targetSequence: z.string().min(5).optional(),
+  requirements: z.string().min(1).optional(),
+  designParameters: DesignParametersSchema.optional(),
+  generationStrategy: z.enum(['random', 'optimization', 'hybrid']).optional(),
+  maxIterations: z.number().min(1).max(100).optional(),
+  topCandidates: z.number().min(1).max(50).optional(),
 });
 
 export const designTaskRouter = router({
@@ -43,7 +45,25 @@ export const designTaskRouter = router({
     .input(DesignTaskConfigSchema)
     .mutation(({ input }) => {
       const taskId = `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const config = input as DesignTaskConfig;
+      
+      // Auto-configure parameters with sensible defaults
+      const config: DesignTaskConfig = {
+        targetProtein: input.targetProtein,
+        targetSequence: input.targetSequence || '',
+        requirements: input.requirements || '',
+        designParameters: input.designParameters || {
+          minLength: 8,
+          maxLength: 50,
+          maxCharge: 5,
+          maxInstabilityIndex: 40,
+          minSequenceScore: 0.5,
+          minAffinityScore: -0.6,
+        },
+        generationStrategy: input.generationStrategy || 'hybrid',
+        maxIterations: input.maxIterations || 10,
+        topCandidates: input.topCandidates || 10,
+      };
+      
       const task = createDesignTask(taskId, config);
 
       return {

@@ -307,3 +307,16 @@
 - [x] 前端：添加结果导出 - 已实现
 - [ ] 测试：WorkAgent 集成测试
 - [ ] 优化：UI 响应性和性能优化
+
+
+## 完全自动化多肽设计流程（新增）
+- [x] 简化 API 契约 - targetSequence 可选，添加 requirements 字段
+- [x] 自动参数配置 - 后端自动设置合理默认值
+- [x] 集成 LLM 引擎 - 替换 runDesignTask 使用真实的 executeDesignIteration
+- [x] 创建简化 UI - WorkAgentSimplified 组件（只需靶点和需求）
+- [x] 集成到主界面 - Home.tsx 中使用 WorkAgentSimplified
+- [ ] 测试完整流程 - 验证用户输入到结果输出
+- [ ] 优化 LLM 提示词 - 改进序列生成质量
+- [ ] 添加结果导出功能 - CSV/JSON 格式
+- [ ] 实现 WebSocket 实时更新 - 替代轮询
+- [ ] 添加数据库持久化 - 保存设计任务历史

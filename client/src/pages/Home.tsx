@@ -8,6 +8,7 @@ import CVPepFindPanel from "@/components/CVPepFindPanel";
 import AIVisualizationPanel from "@/components/AIVisualizationPanel";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { WorkAgent } from "@/components/WorkAgent";
+import { WorkAgentSimplified } from "@/components/WorkAgentSimplified";
 import { AgentProvider } from "@/contexts/AgentContext";
 import { trpc } from "@/lib/trpc";
 import { useIsMobile } from "@/hooks/useMobile";
@@ -255,7 +256,7 @@ export default function Home() {
                 </div>
                 {/* Tab Content */}
                 <div className="flex-1 overflow-hidden">
-                  {desktopTab === 'chat' ? <CVPepFindPanel /> : <WorkAgent />}
+                  {desktopTab === 'chat' ? <CVPepFindPanel /> : <WorkAgentSimplified />}
                 </div>
               </div>
             </ResizableSidebar>
