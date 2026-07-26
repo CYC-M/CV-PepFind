@@ -3,7 +3,7 @@
  * Long-running agent that autonomously designs high-affinity peptides based on user requirements
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -107,6 +107,7 @@ export function WorkAgent() {
   const pauseTaskMutation = trpc.designTask.pause.useMutation();
   const resumeTaskMutation = trpc.designTask.resume.useMutation();
   const cancelTaskMutation = trpc.designTask.cancel.useMutation();
+  const utils = trpc.useUtils();
 
   // Poll task status
   useEffect(() => {
@@ -114,7 +115,6 @@ export function WorkAgent() {
 
     const pollInterval = setInterval(async () => {
       try {
-        const utils = trpc.useUtils();
         const status = await utils.designTask.getStatus.fetch({ taskId: task.taskId });
         
         if (status) {
@@ -162,7 +162,7 @@ export function WorkAgent() {
     }, 2000); // Poll every 2 seconds
 
     return () => clearInterval(pollInterval);
-  }, [task, isRunning, isPaused]);
+  }, [task, isRunning, isPaused, utils]);
 
   const handleStartTask = async () => {
     try {
@@ -277,6 +277,9 @@ export function WorkAgent() {
   };
 
   const isLoading = createTaskMutation.isPending || startTaskMutation.isPending || pauseTaskMutation.isPending || resumeTaskMutation.isPending || cancelTaskMutation.isPending;
+
+  // Memoize utils to prevent unnecessary re-renders
+  React.useMemo(() => utils, [utils]);
 
   return (
     <div className="h-full flex flex-col gap-4 p-4 overflow-hidden">
