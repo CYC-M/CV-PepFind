@@ -5,6 +5,7 @@
 
 import { analyzeSequence } from './sequenceEngine';
 import { batchDocking } from './structureEngine';
+import { executeDesignIteration } from './designExecutor';
 
 export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'paused';
 
