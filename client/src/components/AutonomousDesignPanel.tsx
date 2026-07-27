@@ -192,8 +192,8 @@ export function AutonomousDesignPanel() {
     if (taskId) {
       try {
         const data = await exportCSVQuery.refetch();
-        if (data.data?.csv) {
-          const blob = new Blob([data.data.csv], { type: 'text/csv' });
+        if (data.data && typeof data.data === 'string') {
+          const blob = new Blob([data.data], { type: 'text/csv' });
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;

@@ -89,6 +89,13 @@ export const designTaskRouter = router({
       progress: task.progress,
       iteration: task.iteration,
       candidatesFound: task.candidates.length,
+      topCandidates: task.candidates.slice(0, 10).map(c => ({
+        sequence: c.sequence,
+        sequenceScore: parseFloat(c.sequenceScore.toFixed(2)),
+        affinityScore: parseFloat(c.affinityScore.toFixed(2)),
+        combinedScore: parseFloat(c.combinedScore.toFixed(2)),
+        rank: c.rank,
+      })),
       error: task.error,
       startTime: task.startTime,
       endTime: task.endTime,
@@ -114,11 +121,17 @@ export const designTaskRouter = router({
     }),
 
   /**
-   * Start task execution
+   * Start task execution (non-blocking)
+   * Returns immediately and runs task in background
    */
   start: publicProcedure.input(z.object({ taskId: z.string() })).mutation(async ({ input }) => {
     try {
-      await runDesignTask(input.taskId);
+      // Start task in background without waiting
+      runDesignTask(input.taskId).catch(err => {
+        console.error(`Background task execution failed for ${input.taskId}:`, err);
+      });
+      
+      // Return immediately so client can start polling
       return { success: true };
     } catch (error) {
       return {
@@ -159,9 +172,6 @@ export const designTaskRouter = router({
    * Export candidates as CSV
    */
   exportCSV: publicProcedure.input(z.object({ taskId: z.string() })).query(({ input }) => {
-    const csv = exportCandidatesAsCSV(input.taskId);
-    return { csv };
+    return exportCandidatesAsCSV(input.taskId);
   }),
-
-
 });

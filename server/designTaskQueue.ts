@@ -240,7 +240,21 @@ export async function runDesignTask(taskId: string): Promise<void> {
       try {
         await executeDesignIteration(context);
       } catch (err) {
-        console.error(`Design iteration ${iter + 1} failed:`, err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error(`Design iteration ${iter + 1} failed:`, errorMsg);
+        
+        // Log the error for debugging
+        emitTaskEvent({
+          type: 'error',
+          taskId,
+          data: { 
+            iteration: iter + 1,
+            error: errorMsg,
+            message: `迭代 ${iter + 1} 失败，继续下一迭代...`
+          },
+          timestamp: Date.now(),
+        });
+        
         // Continue with next iteration even if one fails
       }
 
