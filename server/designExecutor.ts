@@ -8,6 +8,26 @@ import { analyzeSequence } from './sequenceEngine';
 import { batchDocking } from './structureEngine';
 import { DesignTaskConfig, DesignCandidate } from './designTaskQueue';
 
+export type DesignStep = 
+  | 'initializing'
+  | 'generating_sequences'
+  | 'analyzing_properties'
+  | 'filtering_sequences'
+  | 'docking_simulation'
+  | 'evaluating_affinity'
+  | 'ranking_candidates'
+  | 'completed';
+
+export interface DesignStepInfo {
+  step: DesignStep;
+  stepNumber: number;
+  totalSteps: number;
+  description: string;
+  progress: number; // 0-100 within this step
+  startTime: number;
+  estimatedDuration?: number;
+}
+
 export interface DesignExecutionContext {
   taskId: string;
   config: DesignTaskConfig;
@@ -16,6 +36,7 @@ export interface DesignExecutionContext {
   onProgress: (progress: number, iteration: number, candidatesFound: number) => void;
   onCandidate: (candidate: DesignCandidate) => void;
   onLog: (message: string, details?: any) => void;
+  onStepChange?: (stepInfo: DesignStepInfo) => void;
 }
 
 /**
@@ -24,10 +45,29 @@ export interface DesignExecutionContext {
 export async function executeDesignIteration(
   context: DesignExecutionContext
 ): Promise<DesignCandidate[]> {
-  const { config, iteration, onProgress, onCandidate, onLog } = context;
+  const { config, iteration, onProgress, onCandidate, onLog, onStepChange } = context;
+  const stepStartTime = Date.now();
+  const TOTAL_STEPS = 8;
+
+  const reportStep = (step: DesignStep, stepNumber: number, description: string, progress: number = 0) => {
+    if (onStepChange) {
+      onStepChange({
+        step,
+        stepNumber,
+        totalSteps: TOTAL_STEPS,
+        description,
+        progress,
+        startTime: stepStartTime,
+      });
+    }
+  };
 
   try {
+    // Step 1: Initialize
+    reportStep('initializing', 1, '初始化设计参数', 0);
+
     // Phase 1: Generate sequences using LLM
+    reportStep('generating_sequences', 2, '使用 LLM 生成多样化候选序列', 10);
     onLog(`[迭代 ${iteration}] 使用 LLM 生成候选序列...`, {
       thinking: `启动 LLM 序列生成器。将生成 ${Math.min(10, config.topCandidates)} 个多样化的候选序列，考虑靶点蛋白 ${config.targetProtein} 的特性。`,
     });
@@ -42,6 +82,7 @@ export async function executeDesignIteration(
       },
     });
 
+    reportStep('generating_sequences', 2, `已生成 ${generatedSequences.length} 个候选序列`, 40);
     onLog(`[迭代 ${iteration}] 生成了 ${generatedSequences.length} 个候选序列`, {
       thinking: `LLM 已生成 ${generatedSequences.length} 个候选序列。现在进行序列性质分析和过滤。`,
       intermediateResults: {
@@ -54,6 +95,7 @@ export async function executeDesignIteration(
     });
 
     // Phase 2: Analyze and filter sequences
+    reportStep('analyzing_properties', 3, '分析序列的物理化学性质', 50);
     onLog(`[迭代 ${iteration}] 分析序列性质...`, {
       thinking: `分析每个生成序列的物理化学性质，包括：\n- 疏水性\n- 电荷\n- 不稳定性指数\n- 极性\n- 芳香性`,
     });
@@ -79,6 +121,7 @@ export async function executeDesignIteration(
       })
       .filter((item): item is any => item !== null);
 
+    reportStep('filtering_sequences', 4, `根据条件过滤序列`, 60);
     onLog(`[迭代 ${iteration}] 过滤序列...`, {
       thinking: `根据设计参数过滤序列：\n- 电荷 ≤ ${config.designParameters.maxCharge}\n- 不稳定性指数 ≤ ${config.designParameters.maxInstabilityIndex}\n- 序列评分 ≥ ${config.designParameters.minSequenceScore}`,
       metrics: {
@@ -108,6 +151,7 @@ export async function executeDesignIteration(
 
     // Phase 3: Molecular docking
     if (filteredSequences.length > 0) {
+      reportStep('docking_simulation', 5, `对 ${filteredSequences.length} 个序列进行分子对接模拟`, 70);
       onLog(`[迭代 ${iteration}] 执行分子对接...`, {
         thinking: `对 ${filteredSequences.length} 个候选序列进行分子对接模拟，评估与靶点 ${config.targetProtein} 的亲和力。`,
       });
@@ -117,6 +161,7 @@ export async function executeDesignIteration(
         config.targetSequence
       );
 
+      reportStep('evaluating_affinity', 6, `评估与靶点的亲和力`, 80);
       onLog(`[迭代 ${iteration}] 对接完成，评估亲和力...`, {
         thinking: `对接模拟已完成。现在评估每个候选序列与靶点的亲和力。`,
         metrics: {
@@ -159,6 +204,13 @@ export async function executeDesignIteration(
 
       context.candidates.push(...newCandidates);
     }
+
+    // Step 7: Ranking candidates
+    reportStep('ranking_candidates', 7, `对候选多肽进行排序`, 90);
+    context.candidates.sort((a, b) => b.combinedScore - a.combinedScore);
+
+    // Step 8: Completed
+    reportStep('completed', 8, `迭代完成`, 100);
 
     // Update progress
     const progress = Math.round(((iteration + 1) / config.maxIterations) * 100);

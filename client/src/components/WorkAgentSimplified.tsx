@@ -13,6 +13,8 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { trpc } from '@/lib/trpc';
 import { ChevronDown, ChevronRight, Play, Pause, RotateCcw, X, Sparkles } from 'lucide-react';
+import { DesignStepIndicator, CompactDesignStepIndicator } from '@/components/DesignStepIndicator';
+import type { DesignStepInfo } from '@/components/DesignStepIndicator';
 
 type DesignPhase = 0 | 1 | 2 | 3 | 4 | 5;
 
@@ -32,6 +34,7 @@ interface WorkAgentTask {
   candidatesFound: number;
   currentPhase: DesignPhase;
   phaseProgress: number;
+  currentStep?: DesignStepInfo;
   topCandidates: Array<{
     rank: number;
     sequence: string;
@@ -71,6 +74,7 @@ export function WorkAgentSimplified() {
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState<DesignStepInfo | undefined>(undefined);
 
   // tRPC mutations and queries
   const createTaskMutation = trpc.designTask.create.useMutation();
@@ -402,6 +406,17 @@ export function WorkAgentSimplified() {
                   );
                 })}
               </div>
+
+              {/* Step Indicator */}
+              {currentStep && (
+                <div className="border-t border-border pt-4">
+                  <DesignStepIndicator 
+                    stepInfo={currentStep} 
+                    isRunning={isRunning}
+                    error={error}
+                  />
+                </div>
+              )}
 
               {/* Phase Progress */}
               <div>
