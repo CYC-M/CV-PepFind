@@ -255,7 +255,7 @@ export default function Home() {
                   </button>
                 </div>
                 {/* Tab Content */}
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-auto">
                   {desktopTab === 'chat' ? <CVPepFindPanel /> : <WorkAgentSimplified />}
                 </div>
               </div>
@@ -338,7 +338,7 @@ export default function Home() {
 
         {/* ── Main Content ──────────────────────────────────────────────── */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-auto">
             <AnimatePresence mode="wait">
               {mobileTab === 'chat' && (
                 <motion.div
@@ -346,7 +346,7 @@ export default function Home() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
-                  className="h-full overflow-hidden"
+                  className="h-full overflow-auto"
                 >
                   <CVPepFindPanel />
                 </motion.div>
@@ -358,9 +358,9 @@ export default function Home() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="h-full overflow-hidden"
+                  className="h-full overflow-auto"
                 >
-                  <WorkAgent />
+                  <WorkAgentSimplified />
                 </motion.div>
               )}
             </AnimatePresence>

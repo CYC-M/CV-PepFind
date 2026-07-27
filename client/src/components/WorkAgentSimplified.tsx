@@ -281,7 +281,7 @@ export function WorkAgentSimplified() {
   React.useMemo(() => utils, [utils]);
 
   return (
-    <div className="h-full flex flex-col gap-4 p-4 overflow-hidden">
+    <div className="h-full flex flex-col gap-4 p-4 overflow-auto">
       {/* Error Alert */}
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-500">
@@ -291,7 +291,7 @@ export function WorkAgentSimplified() {
 
       {!task ? (
         // Simplified Input Panel
-        <Card className="flex-1 flex flex-col">
+        <Card className="flex-1 flex flex-col overflow-hidden">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-emerald-500" />
@@ -358,7 +358,7 @@ export function WorkAgentSimplified() {
         </Card>
       ) : (
         // Task Execution Panel
-        <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+        <div className="flex-1 flex flex-col gap-4 overflow-auto">
           {/* Progress Section */}
           <Card>
             <CardHeader className="pb-3">
@@ -447,7 +447,7 @@ export function WorkAgentSimplified() {
 
           {/* Candidates Section */}
           {task.topCandidates.length > 0 && (
-            <Card className="flex-1 flex flex-col overflow-hidden">
+            <Card className="flex flex-col overflow-hidden max-h-96">
               <CardHeader className="pb-3">
                 <CardTitle>🏆 候选多肽排行榜</CardTitle>
               </CardHeader>
@@ -482,7 +482,7 @@ export function WorkAgentSimplified() {
           )}
 
           {/* Logs Section */}
-          <Card className="flex-1 flex flex-col overflow-hidden">
+          <Card className="flex flex-col overflow-hidden max-h-96">
             <CardHeader className="pb-3">
               <CardTitle>📋 运行日志</CardTitle>
             </CardHeader>
@@ -550,7 +550,7 @@ export function WorkAgentSimplified() {
           </Card>
 
           {/* Control Buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0 sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 -mx-4 px-4 border-t border-border">
             {!isRunning && !isPaused && (
               <Button onClick={handleStartTask} disabled={isLoading} className="flex-1">
                 <Play className="w-4 h-4 mr-2" />
