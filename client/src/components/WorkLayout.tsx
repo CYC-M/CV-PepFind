@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Activity,
   AlertCircle,
+  Bot,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -17,6 +18,7 @@ import {
   Pause,
   Play,
   RotateCcw,
+  Send,
   Sparkles,
   Square,
   Target,
@@ -362,6 +364,7 @@ export function WorkLayout() {
   const [formError, setFormError] = useState<string | null>(null);
   const [selectedCandidateKeys, setSelectedCandidateKeys] = useState<string[]>([]);
   const [comparisonOpen, setComparisonOpen] = useState(false);
+  const [showSequenceInput, setShowSequenceInput] = useState(false);
 
   const createTask = trpc.designTask.create.useMutation();
   const startTask = trpc.designTask.start.useMutation();
@@ -506,20 +509,21 @@ export function WorkLayout() {
 
   return (
     <section className="flex min-h-full w-full flex-col bg-background lg:h-full lg:min-h-0 lg:overflow-hidden" aria-label="Work autonomous peptide design">
-      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card/45 px-4 py-3 backdrop-blur-sm sm:px-6">
+      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-background/55 px-4 py-3 backdrop-blur-sm sm:px-6">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
-            <Dna className="h-5 w-5" />
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-primary/25 bg-primary/15 text-primary ${currentStatus === 'running' ? 'ai-processing' : 'ai-breathing'}`}>
+            {currentStatus === 'running' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bot className="h-4 w-4" />}
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="truncate text-sm font-semibold sm:text-base">CV-PepFind Work</h1>
+              <h1 className="truncate text-sm font-semibold sm:text-base">CV-PepFind</h1>
+              <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[9px] font-medium text-primary">Work Agent</span>
               <Badge className={`shrink-0 border text-[10px] ${STATUS_STYLES[currentStatus] ?? STATUS_STYLES.pending}`}>
                 {currentStatus === 'running' && <Activity className="mr-1 h-3 w-3 animate-pulse" />}
                 {STATUS_LABELS[currentStatus] ?? '等待启动'}
               </Badge>
             </div>
-            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">输入靶点与设计目标，Agent 将自动执行多轮候选筛选</p>
+            <p className="mt-0.5 truncate text-[10px] text-muted-foreground">自主多肽设计对话 · 任务状态可追踪</p>
           </div>
         </div>
         <div className="hidden items-center gap-2 text-[10px] text-muted-foreground sm:flex">
@@ -528,10 +532,10 @@ export function WorkLayout() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 overflow-visible lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)]">
+      <div className="grid grid-cols-1 overflow-visible lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(360px,40vw)]">
         <main className="min-w-0 overflow-visible overscroll-contain border-b border-border lg:min-h-0 lg:overflow-y-auto lg:border-b-0 lg:border-r">
           <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 p-4 sm:p-6">
-            <Card className="border-cyan-400/15 bg-card/55 shadow-xl shadow-cyan-950/10">
+            <Card className="rounded-2xl border-border bg-card/55 shadow-sm">
               <CardContent className="p-4 sm:p-5">
                 <FlowOverview step={step} progress={status?.progress ?? 0} status={status?.status as WorkStatus | undefined} />
                 {step && (
@@ -574,38 +578,40 @@ export function WorkLayout() {
 
             <div className="space-y-3" aria-label="Work 对话上下文">
               {taskId ? (
-                <div className="flex justify-end gap-2.5">
-                  <div className="max-w-[88%] rounded-2xl rounded-tr-sm border border-emerald-400/25 bg-emerald-400/10 px-3 py-2.5 text-right">
-                    <p className="text-[10px] font-medium text-emerald-200/80">你的设计请求</p>
+                <div className="flex flex-row-reverse gap-2.5">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-accent/25 bg-accent/15 text-accent"><Target className="h-3.5 w-3.5" /></span>
+                  <div className="max-w-[88%] rounded-2xl rounded-tr-sm border border-accent/20 bg-accent/15 px-3 py-2.5 text-right">
+                    <p className="text-[10px] font-medium text-accent">你的设计请求</p>
                     <p className="mt-1 break-words text-xs font-medium text-foreground">为 {status?.config?.targetProtein || targetProtein} 设计候选多肽</p>
                     <p className="mt-1 whitespace-pre-wrap break-words text-[11px] leading-5 text-foreground/75">{status?.config?.requirements || requirements}</p>
                   </div>
-                  <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-400/10 text-emerald-200"><Target className="h-3.5 w-3.5" /></span>
                 </div>
               ) : (
-                <div className="flex items-start gap-2.5 rounded-2xl rounded-tl-sm border border-border/70 bg-background/35 p-3">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-cyan-400/20 bg-cyan-400/10 text-cyan-200"><Sparkles className="h-3.5 w-3.5" /></span>
+                <div className="flex items-start gap-2.5">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-primary/25 bg-primary/15 text-primary"><Bot className="h-3.5 w-3.5" /></span>
+                  <div className="rounded-2xl rounded-tl-sm border border-border bg-card px-3 py-2.5">
                   <p className="text-xs leading-5 text-foreground/85">你好，我是 Work Agent。告诉我希望亲和的靶点与设计目标，我会持续生成、筛选、优化并排序候选多肽。</p>
+                  </div>
                 </div>
               )}
             </div>
 
             {taskId && (
-              <Card className="min-w-0 rounded-2xl border-border/80 bg-card/45">
-                <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 px-4 pb-3 pt-4 sm:px-5">
-                  <CardTitle className="flex items-center gap-2 text-sm"><MessageSquareText className="h-4 w-4 text-cyan-300" />Agent 任务对话</CardTitle>
-                  <span className="shrink-0 rounded-full border border-border/70 bg-background/40 px-2 py-1 text-[10px] text-muted-foreground">{logs.length} 条动态</span>
-                </CardHeader>
-                <CardContent className="px-4 pb-4 sm:px-5">
+              <section className="min-w-0" aria-label="Agent 任务对话">
+                <div className="mb-3 flex items-center justify-between gap-3 px-1">
+                  <h2 className="flex items-center gap-2 text-sm font-semibold"><MessageSquareText className="h-4 w-4 text-primary" />Agent 任务对话</h2>
+                  <span className="shrink-0 rounded-full border border-border bg-muted/40 px-2 py-1 text-[10px] text-muted-foreground">{logs.length} 条动态</span>
+                </div>
+                <div className="space-y-2">
                   <AgentActivityCard status={currentStatus} step={step} latestLog={latestLog} />
-                  <div className="relative space-y-2 border-l border-border/70 pl-0" data-testid="work-thinking-process">
+                  <div className="space-y-2" data-testid="work-thinking-process">
                     {logs.length > 0 ? logs.map((log, index) => <LogEntry key={`${log.timestamp}-${index}`} log={log} isLatest={index === logs.length - 1 && currentStatus === 'running'} />) : (
                       <div className="rounded-xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">正在等待第一条系统记录…</div>
                     )}
                   </div>
-                  <p className="mt-3 border-t border-border/50 pt-3 text-[10px] leading-4 text-muted-foreground/70">这是由服务端状态、过程摘要、指标和中间结果组成的可验证任务动态，并非模型隐藏推理链。</p>
-                </CardContent>
-              </Card>
+                  <p className="border-t border-border/50 pt-3 text-[10px] leading-4 text-muted-foreground/70">这是由服务端状态、过程摘要、指标和中间结果组成的可验证任务动态，并非模型隐藏推理链。</p>
+                </div>
+              </section>
             )}
 
 
@@ -614,34 +620,53 @@ export function WorkLayout() {
 
         <aside className="min-w-0 overflow-visible overscroll-contain bg-card/20 lg:min-h-0 lg:overflow-y-auto">
           <div className="flex w-full flex-col gap-4 p-4 sm:p-6">
-            <Card className="rounded-2xl border-border/80 bg-card/55">
-              <CardHeader className="px-4 pb-3 pt-4 sm:px-5"><CardTitle className="flex items-center gap-2 text-sm"><MessageSquareText className="h-4 w-4 text-cyan-300" />向 Work Agent 下达任务</CardTitle><p className="mt-1 text-[11px] leading-5 text-muted-foreground">像与 AI 对话一样描述靶点和约束；Agent 会将请求拆解为可追踪的设计步骤。</p></CardHeader>
-              <CardContent className="space-y-4 px-4 pb-4 sm:px-5">
-                <div className="space-y-2">
-                  <Label htmlFor="work-target" className="text-xs">亲和靶点 <span className="text-rose-300">*</span></Label>
-                  <Input id="work-target" value={targetProtein} onChange={(event) => setTargetProtein(event.target.value)} disabled={isBusy || Boolean(taskId)} placeholder="例如：IL-6、PD-L1 或蛋白名称" className="h-10 bg-background/60 text-sm" />
+            <Card className="rounded-2xl border-border bg-card/70 shadow-sm">
+              <CardContent className="space-y-3 p-3 sm:p-4">
+                <div className="flex items-center gap-2.5">
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/25 bg-primary/15 text-primary ${currentStatus === 'running' ? 'ai-processing' : ''}`}>
+                    {currentStatus === 'running' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bot className="h-3.5 w-3.5" />}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold">向 Work Agent 下达任务</p>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">描述靶点和约束，Agent 将把它转化为设计流程。</p>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="work-sequence" className="text-xs">靶点序列 <span className="text-muted-foreground">（可选）</span></Label>
-                  <Textarea id="work-sequence" value={targetSequence} onChange={(event) => setTargetSequence(event.target.value)} disabled={isBusy || Boolean(taskId)} placeholder="如果已知靶点 FASTA，可粘贴到这里" className="min-h-20 resize-y bg-background/60 font-mono text-xs" />
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="work-target" className="px-0.5 text-[10px] font-medium text-muted-foreground">亲和靶点 <span className="text-rose-300">*</span></Label>
+                  <Input id="work-target" value={targetProtein} onChange={(event) => setTargetProtein(event.target.value)} disabled={isBusy || Boolean(taskId)} placeholder="例如：IL-6、PD-L1 或蛋白名称" className="h-9 border-border bg-input/70 text-xs focus-visible:ring-primary/30" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="work-requirements" className="text-xs">设计需求 <span className="text-muted-foreground">（自然语言）</span></Label>
-                  <Textarea id="work-requirements" value={requirements} onChange={(event) => setRequirements(event.target.value)} disabled={isBusy || Boolean(taskId)} placeholder="例如：高亲和力、低毒性、适合细胞外靶点" className="min-h-24 resize-y bg-background/60 text-xs leading-5" />
+
+                <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none" aria-label="设计需求快捷选项">
+                  {['高亲和力', '低毒性', '高稳定性'].map((suggestion) => (
+                    <button key={suggestion} type="button" disabled={isBusy || Boolean(taskId)} onClick={() => setRequirements((current) => current.includes(suggestion) ? current : `${current.replace(/[。；;，,\s]+$/, '')}${current.trim() ? '、' : ''}${suggestion}`)} className="shrink-0 rounded-lg border border-transparent bg-muted px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/80 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50">
+                      {suggestion}
+                    </button>
+                  ))}
+                  <button type="button" disabled={isBusy || Boolean(taskId)} onClick={() => setShowSequenceInput((current) => !current)} className={`shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-medium transition-colors ${showSequenceInput ? 'border-primary/30 bg-primary/10 text-primary' : 'border-transparent bg-muted text-muted-foreground hover:border-border hover:text-foreground'} disabled:cursor-not-allowed disabled:opacity-50`}>
+                    {showSequenceInput ? '收起 FASTA' : '添加 FASTA'}
+                  </button>
                 </div>
-                {formError && <div role="alert" className="flex items-start gap-2 rounded-lg border border-rose-400/25 bg-rose-400/5 p-3 text-xs leading-5 text-rose-200"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{formError}</div>}
-                {!taskId ? (
-                  <Button type="button" onClick={handleStart} disabled={createTask.isPending || startTask.isPending || !targetProtein.trim()} className="h-10 w-full bg-cyan-500 text-slate-950 hover:bg-cyan-400"><Play className="mr-2 h-4 w-4" />开始自主设计</Button>
-                ) : (
-                  <Button type="button" variant="outline" onClick={handleReset} disabled={isBusy} className="h-10 w-full"><RotateCcw className="mr-2 h-4 w-4" />新建任务</Button>
-                )}
+
+                {showSequenceInput && <div className="space-y-1.5"><Label htmlFor="work-sequence" className="px-0.5 text-[10px] font-medium text-muted-foreground">靶点序列（可选）</Label><Textarea id="work-sequence" value={targetSequence} onChange={(event) => setTargetSequence(event.target.value)} disabled={isBusy || Boolean(taskId)} placeholder="如果已知靶点 FASTA，可粘贴到这里" className="min-h-20 resize-y border-border bg-input/70 font-mono text-[10px] focus-visible:ring-primary/30" /></div>}
+
+                <div className="relative flex items-end gap-2 rounded-xl border border-border bg-input/70 p-2.5 transition-all focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20">
+                  <Textarea id="work-requirements" value={requirements} onChange={(event) => setRequirements(event.target.value)} disabled={isBusy || Boolean(taskId)} placeholder="描述需要的亲和力、稳定性、毒性或应用约束…" className="min-h-11 max-h-28 flex-1 resize-y border-0 bg-transparent p-0 pr-1 text-xs leading-5 shadow-none focus-visible:ring-0" />
+                  {!taskId ? (
+                    <Button type="button" size="icon" onClick={handleStart} disabled={createTask.isPending || startTask.isPending || !targetProtein.trim()} className="h-8 w-8 shrink-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"><Send className="h-3.5 w-3.5" /><span className="sr-only">开始自主设计</span></Button>
+                  ) : (
+                    <Button type="button" size="icon" variant="outline" onClick={handleReset} disabled={isBusy} className="h-8 w-8 shrink-0 rounded-lg"><RotateCcw className="h-3.5 w-3.5" /><span className="sr-only">新建任务</span></Button>
+                  )}
+                </div>
+                <p className="px-0.5 text-[9px] leading-4 text-muted-foreground/70">Enter 发起后，任务会在左侧以 Agent 消息和阶段进度持续反馈。</p>
+                {formError && <div role="alert" className="flex items-start gap-2 rounded-lg border border-rose-400/25 bg-rose-400/5 p-2.5 text-[11px] leading-5 text-rose-200"><AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{formError}</div>}
               </CardContent>
             </Card>
 
             {taskId && (
               <>
-                <Card className="min-w-0 border-border/80 bg-card/55">
-                  <CardHeader className="px-4 pb-3 pt-4 sm:px-5"><CardTitle className="flex items-center gap-2 text-sm"><Activity className="h-4 w-4 text-cyan-300" />运行状态</CardTitle></CardHeader>
+                <Card className="min-w-0 rounded-2xl border-border bg-card/55 shadow-sm">
+                  <CardHeader className="border-b border-border/60 px-4 pb-3 pt-4 sm:px-5"><CardTitle className="flex items-center gap-2 text-sm"><Activity className="h-4 w-4 text-primary" />运行状态</CardTitle></CardHeader>
                   <CardContent className="space-y-4 px-4 pb-4 sm:px-5">
                     <div className="flex items-center justify-between gap-3"><span className="text-xs text-muted-foreground">总体进度</span><span className="font-mono text-sm font-semibold text-cyan-200">{Math.round(status?.progress ?? 0)}%</span></div>
                     <Progress value={status?.progress ?? 0} className="h-2" />
@@ -659,10 +684,10 @@ export function WorkLayout() {
                   </CardContent>
                 </Card>
 
-                <Card className="min-w-0 rounded-2xl border-border/80 bg-card/55">
-                  <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 px-4 pb-3 pt-4 sm:px-5">
-                    <div className="min-w-0"><CardTitle className="flex min-w-0 items-center gap-2 text-sm"><Dna className="h-4 w-4 shrink-0 text-emerald-300" /><span className="truncate">候选多肽</span></CardTitle>{candidates.length > 0 && <p className="mt-1 text-[10px] text-muted-foreground">已选择 <span className="font-mono text-emerald-200">{selectedCandidateKeys.length}/3</span> · 选择至少 2 个进行对比</p>}</div>
-                    <div className="flex shrink-0 items-center gap-0.5"><Button type="button" variant="outline" size="sm" onClick={() => setComparisonOpen(true)} disabled={selectedCandidates.length < 2} className="h-7 border-emerald-400/25 px-2 text-[10px] text-emerald-200 hover:bg-emerald-400/10"><Columns3 className="mr-1 h-3.5 w-3.5" />对比</Button><Button type="button" variant="ghost" size="sm" onClick={handleExport} disabled={candidates.length === 0} className="h-7 px-1.5 text-[10px]"><Download className="mr-1 h-3 w-3" />CSV</Button><Button type="button" variant="ghost" size="sm" onClick={handleExportJSON} disabled={candidates.length === 0} className="h-7 px-1.5 text-[10px]">JSON</Button></div>
+                <Card className="min-w-0 rounded-2xl border-border bg-card/55 shadow-sm">
+                  <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 border-b border-border/60 bg-muted/15 px-4 pb-3 pt-4 sm:px-5">
+                    <div className="min-w-0"><CardTitle className="flex min-w-0 items-center gap-2 text-sm"><Dna className="h-4 w-4 shrink-0 text-primary" /><span className="truncate">候选多肽</span></CardTitle>{candidates.length > 0 && <p className="mt-1 text-[10px] text-muted-foreground">已选择 <span className="font-mono text-primary">{selectedCandidateKeys.length}/3</span> · 选择至少 2 个进行对比</p>}</div>
+                    <div className="flex shrink-0 items-center gap-1"><Button type="button" size="sm" onClick={() => setComparisonOpen(true)} disabled={selectedCandidates.length < 2} className="h-7 px-2 text-[10px]"><Columns3 className="mr-1 h-3.5 w-3.5" />对比</Button><Button type="button" variant="ghost" size="sm" onClick={handleExport} disabled={candidates.length === 0} className="h-7 rounded-lg px-1.5 text-[10px]"><Download className="mr-1 h-3 w-3" />CSV</Button><Button type="button" variant="ghost" size="sm" onClick={handleExportJSON} disabled={candidates.length === 0} className="h-7 rounded-lg px-1.5 text-[10px]">JSON</Button></div>
                   </CardHeader>
                   <CardContent className="space-y-2 px-4 pb-4 sm:px-5">
                     {candidates.length === 0 ? <div className="rounded-xl border border-dashed border-border p-4 text-center text-xs leading-5 text-muted-foreground">候选序列将在通过性质分析和亲和力评估后出现。</div> : candidates.map((candidate, index) => <CandidateDetailCard key={candidateKey(candidate)} candidate={candidate} index={index} selected={selectedCandidateKeys.includes(candidateKey(candidate))} selectionDisabled={!selectedCandidateKeys.includes(candidateKey(candidate)) && selectedCandidateKeys.length >= 3} onSelectionChange={(checked) => handleCandidateSelection(candidate, index, checked)} />)}
