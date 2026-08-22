@@ -222,45 +222,39 @@ export default function Home() {
               )}
             </AnimatePresence>
 
-            {desktopTab === 'work' ? (
-              <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
-                <WorkLayout />
-              </div>
-            ) : (
-              <>
-                {/* ── Left Panel: AI Visualization ──────────────────────────── */}
-                <motion.div
-                  animate={{ width: vizCollapsed ? 40 : undefined }}
-                  className={`relative flex-shrink-0 overflow-hidden border-r border-border bg-card/20 ${vizCollapsed ? '' : 'flex-1'}`}
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            <>
+              {/* ── Left Panel: AI Visualization ──────────────────────────── */}
+              <motion.div
+                animate={{ width: vizCollapsed ? 40 : undefined }}
+                className={`relative flex-shrink-0 overflow-hidden border-r border-border bg-card/20 ${vizCollapsed ? '' : 'flex-1'}`}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              >
+                {!vizCollapsed && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full min-h-0">
+                    <AIVisualizationPanel />
+                  </motion.div>
+                )}
+                <button
+                  onClick={() => setVizCollapsed(!vizCollapsed)}
+                  className="absolute -right-3 top-1/2 z-10 flex h-12 w-6 -translate-y-1/2 items-center justify-center rounded-r-lg border border-border bg-card text-muted-foreground shadow-md transition-all hover:text-foreground"
+                  aria-label={vizCollapsed ? '展开可视化面板' : '收起可视化面板'}
                 >
-                  {!vizCollapsed && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full min-h-0">
-                      <AIVisualizationPanel />
-                    </motion.div>
-                  )}
-                  <button
-                    onClick={() => setVizCollapsed(!vizCollapsed)}
-                    className="absolute -right-3 top-1/2 z-10 flex h-12 w-6 -translate-y-1/2 items-center justify-center rounded-r-lg border border-border bg-card text-muted-foreground shadow-md transition-all hover:text-foreground"
-                    aria-label={vizCollapsed ? '展开可视化面板' : '收起可视化面板'}
-                  >
-                    <ChevronRight className={`h-3 w-3 transition-transform ${vizCollapsed ? '' : 'rotate-180'}`} />
-                  </button>
-                  {vizCollapsed && <div className="flex flex-col items-center gap-3 pt-4"><Eye className="h-4 w-4 text-muted-foreground" /></div>}
-                </motion.div>
+                  <ChevronRight className={`h-3 w-3 transition-transform ${vizCollapsed ? '' : 'rotate-180'}`} />
+                </button>
+                {vizCollapsed && <div className="flex flex-col items-center gap-3 pt-4"><Eye className="h-4 w-4 text-muted-foreground" /></div>}
+              </motion.div>
 
-                {/* ── Right Panel: Chat ────────────────────────────────────── */}
-                <ResizableSidebar>
-                  <div className="flex h-full min-h-0 flex-col">
-                    <div className="flex shrink-0 items-center gap-2 border-b border-border bg-gradient-to-r from-background to-background/50 px-3 py-3">
-                      <button onClick={() => setDesktopTab('chat')} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20">Chat</button>
-                      <button onClick={() => setDesktopTab('work')} className="rounded-lg bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground">Work</button>
-                    </div>
-                    <div className="min-h-0 flex-1 overflow-y-auto"><CVPepFindPanel /></div>
+              {/* ── Right Panel: Chat / Work use the exact same shell ─────── */}
+              <ResizableSidebar>
+                <div className="flex h-full min-h-0 flex-col">
+                  <div className="flex shrink-0 items-center gap-2 border-b border-border bg-gradient-to-r from-background to-background/50 px-3 py-3">
+                    <button onClick={() => setDesktopTab('chat')} className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${desktopTab === 'chat' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'}`}>Chat</button>
+                    <button onClick={() => setDesktopTab('work')} className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${desktopTab === 'work' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'}`}>Work</button>
                   </div>
-                </ResizableSidebar>
-              </>
-            )}
+                  <div className="min-h-0 flex-1 overflow-hidden">{desktopTab === 'work' ? <WorkLayout /> : <CVPepFindPanel />}</div>
+                </div>
+              </ResizableSidebar>
+            </>
           </div>
         </div>
       </AgentProvider>
