@@ -315,7 +315,7 @@
 - [x] 集成 LLM 引擎 - 替换 runDesignTask 使用真实的 executeDesignIteration
 - [x] 创建简化 UI - WorkAgentSimplified 组件（只需靶点和需求）
 - [x] 集成到主界面 - Home.tsx 中使用 WorkAgentSimplified
-- [ ] 测试完整流程 - 验证用户输入到结果输出
+- [x] 测试完整流程 - 验证用户输入到结果输出
 - [ ] 优化 LLM 提示词 - 改进序列生成质量
 - [ ] 添加结果导出功能 - CSV/JSON 格式
 - [ ] 实现 WebSocket 实时更新 - 替代轮询
@@ -326,9 +326,9 @@
 - [x] 增强后端状态推送 - 在 designExecutor 中添加 onStepChange 回调
 - [x] 创建前端动画步骤指示器组件 - DesignStepIndicator.tsx
 - [x] 集成步骤状态到 WorkAgentSimplified
-- [ ] 连接后端步骤回调到前端状态
-- [ ] 测试完整的步骤流程
-- [ ] 优化动画性能和用户体验
+- [x] 连接后端步骤回调到前端状态
+- [x] 测试完整的步骤流程
+- [x] 优化动画性能和用户体验
 - [ ] 添加步骤详情弹窗（可选）
 - [ ] 实现步骤重试机制（可选）
 
@@ -348,9 +348,9 @@
 - [x] 空态、运行中、暂停、完成、失败状态均可显示
 - [x] 开始后立即反馈运行状态，取消后可重新开始
 - [x] 长日志和长序列在容器内滚动或换行
-- [ ] 键盘、暗色主题和 reduced motion 下关键状态可用
-- [ ] TypeScript、Vitest、浏览器控制台和网络请求检查通过
-- [ ] 桌面端与移动端截图检查通过
+- [x] 键盘、暗色主题和 reduced motion 下关键状态可用
+- [x] TypeScript、Vitest、浏览器控制台和网络请求检查通过
+- [x] 桌面端与移动端截图检查通过
 - [x] 更新 Work 使用说明、状态映射与后续持久化/WebSocket 边界
 - [x] 完成最终代码审查、清理旧引用并保存可回滚版本
 - [x] 交付时区分已验证功能与待用户验收项目
