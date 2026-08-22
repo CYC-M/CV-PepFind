@@ -1,16 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Activity,
   AlertCircle,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   CircleDashed,
   Clock3,
   Dna,
   Download,
+  FlaskConical,
+  Loader2,
+  MessageSquareText,
   Pause,
   Play,
   RotateCcw,
+  Sparkles,
   Square,
   Target,
   TerminalSquare,
@@ -26,6 +32,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { PeptideLink } from '@/components/PeptideLink';
 import { CompactDesignStepIndicator } from '@/components/DesignStepIndicator';
 import { trpc } from '@/lib/trpc';
+import { calculatePeptideMetrics } from '@shared/peptideMetrics';
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed']);
 
@@ -117,57 +124,30 @@ function LogEntry({ log, isLatest }: { log: WorkLog; isLatest: boolean }) {
   }[log.level];
 
   return (
-    <div className="relative pl-6">
-      <span className={`absolute left-[5px] top-2 h-2.5 w-2.5 rounded-full ring-4 ring-background ${levelClass}`} aria-hidden="true" />
-      <div className={`rounded-xl border px-3 py-2.5 transition-colors ${isLatest ? 'border-cyan-400/30 bg-cyan-400/5' : 'border-border/70 bg-background/35'}`}>
+    <div className="flex items-start gap-2.5">
+      <span className={`mt-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${isLatest ? 'border-cyan-300/35 bg-cyan-400/10 text-cyan-200' : 'border-border bg-muted/60 text-muted-foreground'}`} aria-hidden="true"><Sparkles className="h-3.5 w-3.5" /></span>
+      <div className={`min-w-0 flex-1 rounded-2xl rounded-tl-sm border px-3 py-2.5 transition-colors ${isLatest ? 'border-cyan-400/30 bg-cyan-400/5' : 'border-border/70 bg-background/35'}`}>
         <button
           type="button"
           onClick={() => hasDetails && setExpanded((current) => !current)}
           className={`flex w-full items-start gap-3 text-left ${hasDetails ? 'cursor-pointer' : 'cursor-default'}`}
           aria-expanded={hasDetails ? expanded : undefined}
         >
-          <span className="mt-0.5 shrink-0 font-mono text-[10px] text-muted-foreground/70">
-            {new Date(log.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${levelClass}`} aria-hidden="true" />
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center justify-between gap-2"><span className="text-[10px] font-medium text-cyan-200/80">CV-PepFind Agent</span><span className="font-mono text-[10px] text-muted-foreground/70">{new Date(log.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span></span>
+            <span className="mt-1 block break-words text-xs leading-5 text-foreground/90">{log.message}</span>
           </span>
-          <span className="min-w-0 flex-1 break-words text-xs leading-5 text-foreground/90">{log.message}</span>
-          {hasDetails && <span className="shrink-0 text-[10px] text-muted-foreground">{expanded ? '收起' : '展开'}</span>}
+          {hasDetails && <span className="mt-0.5 shrink-0 text-[10px] text-muted-foreground">{expanded ? '收起' : '展开'}</span>}
         </button>
         <AnimatePresence initial={false}>
           {expanded && hasDetails && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              className="overflow-hidden"
-            >
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
               <div className="mt-2 space-y-2 border-t border-border/60 pt-2 text-[11px] leading-5 text-muted-foreground">
-                {(log.details?.thinking || log.details?.reasoning) && (
-                  <div>
-                    <p className="mb-0.5 font-medium text-cyan-300">过程摘要</p>
-                    <p className="whitespace-pre-wrap break-words">{log.details.thinking || log.details.reasoning}</p>
-                  </div>
-                )}
-                {log.details?.error && (
-                  <div className="rounded-lg border border-rose-400/20 bg-rose-400/5 px-2 py-1.5 text-rose-200">
-                    {log.details.error}
-                  </div>
-                )}
-                {log.details?.metrics && (
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {Object.entries(log.details.metrics).map(([key, value]) => (
-                      <div key={key} className="min-w-0 rounded-md bg-muted/50 px-2 py-1">
-                        <span className="mr-1 text-muted-foreground/70">{key}:</span>
-                        <span className="break-all text-foreground/80">{formatValue(value)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {Boolean(log.details?.intermediateResults) && (
-                  <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-black/20 p-2 font-mono text-[10px] text-muted-foreground/80">
-                    {formatJson(log.details?.intermediateResults)}
-                  </pre>
-                )}
+                {(log.details?.thinking || log.details?.reasoning) && <div><p className="mb-0.5 font-medium text-cyan-300">过程摘要</p><p className="whitespace-pre-wrap break-words">{log.details.thinking || log.details.reasoning}</p></div>}
+                {log.details?.error && <div className="rounded-lg border border-rose-400/20 bg-rose-400/5 px-2 py-1.5 text-rose-200">{log.details.error}</div>}
+                {log.details?.metrics && <div className="grid grid-cols-2 gap-1.5">{Object.entries(log.details.metrics).map(([key, value]) => <div key={key} className="min-w-0 rounded-md bg-muted/50 px-2 py-1"><span className="mr-1 text-muted-foreground/70">{key}:</span><span className="break-all text-foreground/80">{formatValue(value)}</span></div>)}</div>}
+                {Boolean(log.details?.intermediateResults) && <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-black/20 p-2 font-mono text-[10px] text-muted-foreground/80">{formatJson(log.details?.intermediateResults)}</pre>}
               </div>
             </motion.div>
           )}
@@ -214,6 +194,122 @@ function FlowOverview({ step, progress, status }: { step?: WorkStep; progress: n
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function CandidateMetric({ label, value, tone = 'text-foreground/85' }: { label: string; value: string; tone?: string }) {
+  return (
+    <div className="min-w-0 rounded-lg border border-border/60 bg-background/45 px-2.5 py-2">
+      <p className="truncate text-[9px] font-medium uppercase tracking-[0.12em] text-muted-foreground/70">{label}</p>
+      <p className={`mt-1 truncate font-mono text-[11px] font-semibold ${tone}`}>{value}</p>
+    </div>
+  );
+}
+
+function CandidateDetailCard({ candidate, index }: { candidate: WorkCandidate; index: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const metrics = useMemo(() => calculatePeptideMetrics(candidate.sequence), [candidate.sequence]);
+  const rank = candidate.rank || index + 1;
+
+  return (
+    <motion.div
+      layout
+      className={`min-w-0 overflow-hidden rounded-xl border transition-colors ${expanded ? 'border-emerald-400/35 bg-emerald-400/[0.045]' : 'border-border/70 bg-background/40 hover:border-emerald-400/25'}`}
+    >
+      <button
+        type="button"
+        onClick={() => setExpanded((current) => !current)}
+        aria-expanded={expanded}
+        aria-controls={`candidate-detail-${index}`}
+        className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left transition-colors hover:bg-emerald-400/[0.045] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+      >
+        <span className="flex min-w-0 items-center gap-2.5">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-emerald-400/20 bg-emerald-400/10 font-mono text-[10px] font-semibold text-emerald-300">{rank}</span>
+          <span className="min-w-0">
+            <span className="block truncate font-mono text-xs font-semibold tracking-wide text-cyan-100">{candidate.sequence}</span>
+            <span className="mt-0.5 block text-[10px] text-muted-foreground">点击查看亲和力与理化性质</span>
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-2 text-right">
+          <span>
+            <span className="block font-mono text-[11px] font-semibold text-emerald-200">{candidate.combinedScore.toFixed(2)}</span>
+            <span className="block text-[9px] text-muted-foreground">综合分</span>
+          </span>
+          {expanded ? <ChevronUp className="h-4 w-4 text-emerald-300" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        </span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            id={`candidate-detail-${index}`}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-emerald-400/15 px-3 pb-3 pt-2.5">
+              <div className="flex items-start gap-2 rounded-lg border border-cyan-400/15 bg-cyan-400/[0.045] px-2.5 py-2">
+                <Dna className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cyan-300" />
+                <div className="min-w-0">
+                  <p className="text-[9px] font-medium uppercase tracking-[0.12em] text-cyan-200/80">候选序列</p>
+                  <div className="mt-1 overflow-x-auto"><PeptideLink sequence={candidate.sequence} className="whitespace-nowrap font-mono text-[11px] text-cyan-100 hover:text-white" /></div>
+                </div>
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <CandidateMetric label="亲和力评分" value={candidate.affinityScore.toFixed(2)} tone="text-emerald-200" />
+                <CandidateMetric label="序列评分" value={candidate.sequenceScore.toFixed(2)} tone="text-cyan-200" />
+                <CandidateMetric label="分子量" value={`${metrics.molecularWeight.toFixed(1)} Da`} />
+                <CandidateMetric label="净电荷" value={`${metrics.netCharge >= 0 ? '+' : ''}${metrics.netCharge.toFixed(1)}`} />
+                <CandidateMetric label="疏水性 (GRAVY)" value={metrics.hydrophobicity.toFixed(2)} />
+                <CandidateMetric label="稳定性估计" value={`${metrics.stabilityIndex.toFixed(0)} / 100`} />
+                <CandidateMetric label="等电点 (pI)" value={metrics.isoelectricPoint.toFixed(1)} />
+                <CandidateMetric label="结构倾向" value={metrics.secondaryStructure.dominant} />
+              </div>
+              <p className="mt-2 flex items-start gap-1.5 text-[9px] leading-4 text-muted-foreground/75"><FlaskConical className="mt-0.5 h-3 w-3 shrink-0 text-amber-300/80" />理化性质为序列层面的快速筛选估计，需结合后续结构预测及实验验证。</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+function AgentActivityCard({ status, step, latestLog }: { status: WorkStatus; step?: WorkStep; latestLog?: WorkLog }) {
+  const reducedMotion = useReducedMotion();
+  const isRunning = status === 'running';
+  const statusTitle = status === 'paused'
+    ? 'Agent 已暂停，保留当前筛选上下文'
+    : status === 'completed'
+      ? 'Agent 已完成本轮候选排序'
+      : status === 'failed'
+        ? '任务需要处理后重新启动'
+        : isRunning
+          ? `Agent 正在${step?.description || '分析候选序列'}`
+          : 'Agent 准备接收设计任务';
+  const statusDetail = isRunning
+    ? latestLog?.message || '正在整合序列生成、理化筛选与亲和力评估信号。'
+    : status === 'paused'
+      ? '恢复后将从当前步骤继续，并保留已发现候选。'
+      : status === 'completed'
+        ? '可在右侧展开候选卡，查看快速理化性质估计。'
+        : '输入靶点与需求后，系统会以消息流方式反馈可验证的任务状态。';
+
+  return (
+    <div className="mb-3 flex items-start gap-3 rounded-xl border border-cyan-400/15 bg-cyan-400/[0.045] p-3" role="status" aria-live="polite">
+      <span className="relative mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-cyan-400/25 bg-cyan-400/10 text-cyan-200">
+        {isRunning ? <Loader2 className={`h-4 w-4 ${reducedMotion ? '' : 'animate-spin'}`} /> : <Sparkles className="h-4 w-4" />}
+        {isRunning && !reducedMotion && <motion.span className="absolute inset-0 rounded-full border border-cyan-300/50" animate={{ scale: [1, 1.45], opacity: [0.65, 0] }} transition={{ duration: 1.4, repeat: Infinity, ease: 'easeOut' }} />}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-semibold text-cyan-100">{statusTitle}</p>
+          {isRunning && <span className="flex shrink-0 gap-1" aria-label="正在处理"><span className={`h-1.5 w-1.5 rounded-full bg-cyan-300 ${reducedMotion ? '' : 'animate-bounce'}`} /><span className={`h-1.5 w-1.5 rounded-full bg-cyan-300/75 ${reducedMotion ? '' : 'animate-bounce [animation-delay:120ms]'}`} /><span className={`h-1.5 w-1.5 rounded-full bg-cyan-300/50 ${reducedMotion ? '' : 'animate-bounce [animation-delay:240ms]'}`} /></span>}
+        </div>
+        <p className="mt-1 break-words text-[11px] leading-5 text-muted-foreground">{statusDetail}</p>
       </div>
     </div>
   );
@@ -394,20 +490,38 @@ export function WorkLayout() {
               </CardContent>
             </Card>
 
+            <div className="space-y-3" aria-label="Work 对话上下文">
+              {taskId ? (
+                <div className="flex justify-end gap-2.5">
+                  <div className="max-w-[88%] rounded-2xl rounded-tr-sm border border-emerald-400/25 bg-emerald-400/10 px-3 py-2.5 text-right">
+                    <p className="text-[10px] font-medium text-emerald-200/80">你的设计请求</p>
+                    <p className="mt-1 break-words text-xs font-medium text-foreground">为 {status?.config?.targetProtein || targetProtein} 设计候选多肽</p>
+                    <p className="mt-1 whitespace-pre-wrap break-words text-[11px] leading-5 text-foreground/75">{status?.config?.requirements || requirements}</p>
+                  </div>
+                  <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-400/10 text-emerald-200"><Target className="h-3.5 w-3.5" /></span>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2.5 rounded-2xl rounded-tl-sm border border-border/70 bg-background/35 p-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-cyan-400/20 bg-cyan-400/10 text-cyan-200"><Sparkles className="h-3.5 w-3.5" /></span>
+                  <p className="text-xs leading-5 text-foreground/85">你好，我是 Work Agent。告诉我希望亲和的靶点与设计目标，我会持续生成、筛选、优化并排序候选多肽。</p>
+                </div>
+              )}
+            </div>
+
             {taskId && (
-              <Card className="min-w-0 border-border/80 bg-card/45">
+              <Card className="min-w-0 rounded-2xl border-border/80 bg-card/45">
                 <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 px-4 pb-3 pt-4 sm:px-5">
-                  <CardTitle className="flex items-center gap-2 text-sm"><TerminalSquare className="h-4 w-4 text-cyan-300" />Agent 思考过程</CardTitle>
-                  <span className="shrink-0 text-[10px] text-muted-foreground">{logs.length} 条记录</span>
+                  <CardTitle className="flex items-center gap-2 text-sm"><MessageSquareText className="h-4 w-4 text-cyan-300" />Agent 任务对话</CardTitle>
+                  <span className="shrink-0 rounded-full border border-border/70 bg-background/40 px-2 py-1 text-[10px] text-muted-foreground">{logs.length} 条动态</span>
                 </CardHeader>
                 <CardContent className="px-4 pb-4 sm:px-5">
+                  <AgentActivityCard status={currentStatus} step={step} latestLog={latestLog} />
                   <div className="relative space-y-2 border-l border-border/70 pl-0" data-testid="work-thinking-process">
                     {logs.length > 0 ? logs.map((log, index) => <LogEntry key={`${log.timestamp}-${index}`} log={log} isLatest={index === logs.length - 1 && currentStatus === 'running'} />) : (
                       <div className="rounded-xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">正在等待第一条系统记录…</div>
                     )}
                   </div>
-                  {latestLog && currentStatus === 'running' && <p className="mt-3 flex items-center gap-2 text-[10px] text-cyan-300/80"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-300" />Agent 正在处理当前任务</p>}
-                  <p className="mt-3 border-t border-border/50 pt-3 text-[10px] leading-4 text-muted-foreground/70">这里展示服务端产生的阶段、过程摘要、指标和中间结果，用于验证任务进展；不会把模型隐藏推理链作为事实展示。</p>
+                  <p className="mt-3 border-t border-border/50 pt-3 text-[10px] leading-4 text-muted-foreground/70">这是由服务端状态、过程摘要、指标和中间结果组成的可验证任务动态，并非模型隐藏推理链。</p>
                 </CardContent>
               </Card>
             )}
@@ -418,8 +532,8 @@ export function WorkLayout() {
 
         <aside className="min-w-0 overflow-visible overscroll-contain bg-card/20 lg:min-h-0 lg:overflow-y-auto">
           <div className="flex w-full flex-col gap-4 p-4 sm:p-6">
-            <Card className="border-border/80 bg-card/55">
-              <CardHeader className="px-4 pb-3 pt-4 sm:px-5"><CardTitle className="flex items-center gap-2 text-sm"><Target className="h-4 w-4 text-cyan-300" />设计任务</CardTitle></CardHeader>
+            <Card className="rounded-2xl border-border/80 bg-card/55">
+              <CardHeader className="px-4 pb-3 pt-4 sm:px-5"><CardTitle className="flex items-center gap-2 text-sm"><MessageSquareText className="h-4 w-4 text-cyan-300" />向 Work Agent 下达任务</CardTitle><p className="mt-1 text-[11px] leading-5 text-muted-foreground">像与 AI 对话一样描述靶点和约束；Agent 会将请求拆解为可追踪的设计步骤。</p></CardHeader>
               <CardContent className="space-y-4 px-4 pb-4 sm:px-5">
                 <div className="space-y-2">
                   <Label htmlFor="work-target" className="text-xs">亲和靶点 <span className="text-rose-300">*</span></Label>
@@ -463,16 +577,10 @@ export function WorkLayout() {
                   </CardContent>
                 </Card>
 
-                <Card className="min-w-0 border-border/80 bg-card/55">
+                <Card className="min-w-0 rounded-2xl border-border/80 bg-card/55">
                   <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 px-4 pb-3 pt-4 sm:px-5"><CardTitle className="flex min-w-0 items-center gap-2 text-sm"><Dna className="h-4 w-4 shrink-0 text-emerald-300" /><span className="truncate">候选多肽</span></CardTitle><Button type="button" variant="ghost" size="sm" onClick={handleExport} disabled={candidates.length === 0} className="h-7 shrink-0 px-2 text-[10px]"><Download className="mr-1 h-3 w-3" />导出</Button></CardHeader>
                   <CardContent className="space-y-2 px-4 pb-4 sm:px-5">
-                    {candidates.length === 0 ? <div className="rounded-xl border border-dashed border-border p-4 text-center text-xs leading-5 text-muted-foreground">候选序列将在通过性质分析和亲和力评估后出现。</div> : candidates.map((candidate, index) => (
-                      <div key={`${candidate.sequence}-${index}`} className="min-w-0 rounded-xl border border-border/70 bg-background/40 p-3">
-                        <div className="flex items-center justify-between gap-2"><span className="text-[10px] font-semibold text-emerald-300">#{candidate.rank || index + 1}</span><span className="font-mono text-[10px] text-muted-foreground">综合 {candidate.combinedScore.toFixed(2)}</span></div>
-                        <div className="mt-2 min-w-0 overflow-x-auto"><PeptideLink sequence={candidate.sequence} className="whitespace-nowrap text-xs text-cyan-200 hover:text-cyan-100" /></div>
-                        <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] text-muted-foreground"><span>序列评分 <b className="font-mono text-foreground/80">{candidate.sequenceScore.toFixed(2)}</b></span><span>亲和评分 <b className="font-mono text-foreground/80">{candidate.affinityScore.toFixed(2)}</b></span></div>
-                      </div>
-                    ))}
+                    {candidates.length === 0 ? <div className="rounded-xl border border-dashed border-border p-4 text-center text-xs leading-5 text-muted-foreground">候选序列将在通过性质分析和亲和力评估后出现。</div> : candidates.map((candidate, index) => <CandidateDetailCard key={`${candidate.sequence}-${index}`} candidate={candidate} index={index} />)}
                   </CardContent>
                 </Card>
               </>

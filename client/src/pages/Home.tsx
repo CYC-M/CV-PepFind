@@ -13,6 +13,11 @@ import { trpc } from "@/lib/trpc";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useResizablePanel } from "@/hooks/useResizablePanel";
 
+function getInitialMode(): 'chat' | 'work' {
+  if (typeof window === 'undefined') return 'chat';
+  return new URLSearchParams(window.location.search).get('mode') === 'work' ? 'work' : 'chat';
+}
+
 // Resizable Sidebar Component
 function ResizableSidebar({ children }: { children: React.ReactNode }) {
   const { widthPercent, isResizing, startResize } = useResizablePanel({
@@ -47,8 +52,8 @@ export default function Home() {
   const [showHistory, setShowHistory] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [vizCollapsed, setVizCollapsed] = useState(false);
-  const [desktopTab, setDesktopTab] = useState<'chat' | 'work'>('chat');
-  const [mobileTab, setMobileTab] = useState<'chat' | 'work'>('chat');
+  const [desktopTab, setDesktopTab] = useState<'chat' | 'work'>(getInitialMode);
+  const [mobileTab, setMobileTab] = useState<'chat' | 'work'>(getInitialMode);
 
   const isMobile = useIsMobile();
   const { data: history } = trpc.peptide.history.useQuery({ limit: 20 });
