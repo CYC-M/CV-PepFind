@@ -8,6 +8,7 @@ import {
   ChevronUp,
   CircleDashed,
   Clock3,
+  Columns3,
   Dna,
   Download,
   FlaskConical,
@@ -25,6 +26,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
@@ -33,6 +36,7 @@ import { PeptideLink } from '@/components/PeptideLink';
 import { CompactDesignStepIndicator } from '@/components/DesignStepIndicator';
 import { trpc } from '@/lib/trpc';
 import { calculatePeptideMetrics } from '@shared/peptideMetrics';
+import { CANDIDATE_COMPARISON_METRICS, getCandidateComparisonValue } from '@shared/candidateComparison';
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed']);
 
@@ -208,7 +212,7 @@ function CandidateMetric({ label, value, tone = 'text-foreground/85' }: { label:
   );
 }
 
-function CandidateDetailCard({ candidate, index }: { candidate: WorkCandidate; index: number }) {
+function CandidateDetailCard({ candidate, index, selected, selectionDisabled, onSelectionChange }: { candidate: WorkCandidate; index: number; selected: boolean; selectionDisabled: boolean; onSelectionChange: (selected: boolean) => void }) {
   const [expanded, setExpanded] = useState(false);
   const metrics = useMemo(() => calculatePeptideMetrics(candidate.sequence), [candidate.sequence]);
   const rank = candidate.rank || index + 1;
@@ -216,30 +220,30 @@ function CandidateDetailCard({ candidate, index }: { candidate: WorkCandidate; i
   return (
     <motion.div
       layout
-      className={`min-w-0 overflow-hidden rounded-xl border transition-colors ${expanded ? 'border-emerald-400/35 bg-emerald-400/[0.045]' : 'border-border/70 bg-background/40 hover:border-emerald-400/25'}`}
+      className={`min-w-0 overflow-hidden rounded-xl border transition-colors ${selected ? 'border-emerald-300/55 bg-emerald-400/[0.075]' : expanded ? 'border-emerald-400/35 bg-emerald-400/[0.045]' : 'border-border/70 bg-background/40 hover:border-emerald-400/25'}`}
     >
-      <button
-        type="button"
-        onClick={() => setExpanded((current) => !current)}
-        aria-expanded={expanded}
-        aria-controls={`candidate-detail-${index}`}
-        className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left transition-colors hover:bg-emerald-400/[0.045] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
-      >
-        <span className="flex min-w-0 items-center gap-2.5">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-emerald-400/20 bg-emerald-400/10 font-mono text-[10px] font-semibold text-emerald-300">{rank}</span>
-          <span className="min-w-0">
-            <span className="block truncate font-mono text-xs font-semibold tracking-wide text-cyan-100">{candidate.sequence}</span>
-            <span className="mt-0.5 block text-[10px] text-muted-foreground">点击查看亲和力与理化性质</span>
+      <div className="flex items-center gap-1.5 px-3 py-2.5">
+        <Checkbox checked={selected} disabled={selectionDisabled} onCheckedChange={(checked) => onSelectionChange(Boolean(checked))} aria-label={`选择候选多肽 ${candidate.sequence} 进行对比`} className="border-emerald-400/45 data-[state=checked]:bg-emerald-400 data-[state=checked]:text-slate-950" />
+        <button
+          type="button"
+          onClick={() => setExpanded((current) => !current)}
+          aria-expanded={expanded}
+          aria-controls={`candidate-detail-${index}`}
+          className="flex min-w-0 flex-1 items-center justify-between gap-3 py-0.5 text-left transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+        >
+          <span className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-emerald-400/20 bg-emerald-400/10 font-mono text-[10px] font-semibold text-emerald-300">{rank}</span>
+            <span className="min-w-0">
+              <span className="block truncate font-mono text-xs font-semibold tracking-wide text-cyan-100">{candidate.sequence}</span>
+              <span className="mt-0.5 block text-[10px] text-muted-foreground">展开详情 · 勾选对比</span>
+            </span>
           </span>
-        </span>
-        <span className="flex shrink-0 items-center gap-2 text-right">
-          <span>
-            <span className="block font-mono text-[11px] font-semibold text-emerald-200">{candidate.combinedScore.toFixed(2)}</span>
-            <span className="block text-[9px] text-muted-foreground">综合分</span>
+          <span className="flex shrink-0 items-center gap-2 text-right">
+            <span><span className="block font-mono text-[11px] font-semibold text-emerald-200">{candidate.combinedScore.toFixed(2)}</span><span className="block text-[9px] text-muted-foreground">综合分</span></span>
+            {expanded ? <ChevronUp className="h-4 w-4 text-emerald-300" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
           </span>
-          {expanded ? <ChevronUp className="h-4 w-4 text-emerald-300" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-        </span>
-      </button>
+        </button>
+      </div>
 
       <AnimatePresence initial={false}>
         {expanded && (
@@ -275,6 +279,41 @@ function CandidateDetailCard({ candidate, index }: { candidate: WorkCandidate; i
         )}
       </AnimatePresence>
     </motion.div>
+  );
+}
+
+function CandidateComparisonDialog({ open, onOpenChange, candidates }: { open: boolean; onOpenChange: (open: boolean) => void; candidates: WorkCandidate[] }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[calc(100vh-1.5rem)] max-w-[calc(100%-1rem)] gap-0 overflow-hidden rounded-2xl border-emerald-400/20 bg-card p-0 sm:max-w-5xl">
+        <DialogHeader className="border-b border-border/70 bg-gradient-to-r from-emerald-400/[0.08] to-cyan-400/[0.035] px-5 py-4 pr-12">
+          <DialogTitle className="flex items-center gap-2 text-base"><Columns3 className="h-4 w-4 text-emerald-300" />候选多肽并排对比</DialogTitle>
+          <DialogDescription className="text-xs leading-5">已选择 {candidates.length} 个候选。指标用于快速序列筛选，建议与后续结构预测和实验验证结合解读。</DialogDescription>
+        </DialogHeader>
+        {candidates.length < 2 ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">至少选择两个候选多肽后即可并排对比。</div>
+        ) : (
+          <div className="max-h-[calc(100vh-11rem)] overflow-auto">
+            <table className="min-w-[620px] w-full border-collapse text-left">
+              <thead className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm">
+                <tr className="border-b border-border/70">
+                  <th scope="col" className="sticky left-0 z-20 min-w-32 bg-card/95 px-4 py-3 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">指标</th>
+                  {candidates.map((candidate, index) => <th key={candidate.sequence} scope="col" className="min-w-40 px-3 py-3"><div className="flex items-center gap-2"><span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/10 font-mono text-[9px] text-emerald-300">{candidate.rank || index + 1}</span><PeptideLink sequence={candidate.sequence} className="max-w-28 truncate font-mono text-[11px] text-cyan-100" /></div></th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {CANDIDATE_COMPARISON_METRICS.map((metric) => (
+                  <tr key={metric.key} className="border-b border-border/50 transition-colors hover:bg-muted/30">
+                    <th scope="row" className="sticky left-0 z-[1] bg-card px-4 py-3 text-[11px] font-medium text-muted-foreground">{metric.label}</th>
+                    {candidates.map((candidate) => <td key={`${candidate.sequence}-${metric.key}`} className={`px-3 py-3 font-mono text-xs ${metric.emphasis === 'primary' ? 'font-semibold text-emerald-200' : 'text-foreground/85'}`}>{getCandidateComparisonValue(candidate, metric.key)}</td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -321,6 +360,8 @@ export function WorkLayout() {
   const [requirements, setRequirements] = useState('高亲和力、低毒性、具备良好的稳定性');
   const [taskId, setTaskId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [selectedCandidateKeys, setSelectedCandidateKeys] = useState<string[]>([]);
+  const [comparisonOpen, setComparisonOpen] = useState(false);
 
   const createTask = trpc.designTask.create.useMutation();
   const startTask = trpc.designTask.start.useMutation();
@@ -345,11 +386,21 @@ export function WorkLayout() {
   const step = status?.currentStep as WorkStep | undefined;
   const isBusy = currentStatus === 'running' || currentStatus === 'paused' || createTask.isPending || startTask.isPending;
   const isTerminal = Boolean(status && TERMINAL_STATUSES.has(status.status));
+  const candidateKey = (candidate: WorkCandidate) => candidate.sequence;
+  const selectedCandidates = candidates.filter((candidate) => selectedCandidateKeys.includes(candidateKey(candidate)));
 
   useEffect(() => {
     if (!taskId) return;
     void utils.designTask.getStatus.invalidate({ taskId });
   }, [taskId, utils.designTask.getStatus]);
+
+  useEffect(() => {
+    const activeKeys = candidates.map(candidateKey);
+    setSelectedCandidateKeys((current) => {
+      const remaining = current.filter((key) => activeKeys.includes(key));
+      return remaining.length === current.length ? current : remaining;
+    });
+  }, [candidates]);
 
   const latestLog = logs[logs.length - 1];
   const estimatedTime = useMemo(() => {
@@ -407,7 +458,17 @@ export function WorkLayout() {
   const handleReset = () => {
     setTaskId(null);
     setFormError(null);
+    setSelectedCandidateKeys([]);
+    setComparisonOpen(false);
     void statusQuery.refetch();
+  };
+
+  const handleCandidateSelection = (candidate: WorkCandidate, index: number, checked: boolean) => {
+    const key = candidateKey(candidate);
+    setSelectedCandidateKeys((current) => {
+      if (checked) return current.includes(key) || current.length >= 3 ? current : [...current, key];
+      return current.filter((currentKey) => currentKey !== key);
+    });
   };
 
   const handleExport = async () => {
@@ -418,6 +479,27 @@ export function WorkLayout() {
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = `cv-pepfind-${taskId}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportJSON = () => {
+    if (!taskId || candidates.length === 0) return;
+    const payload = {
+      taskId,
+      exportedAt: new Date().toISOString(),
+      targetProtein: status?.config?.targetProtein || targetProtein,
+      requirements: status?.config?.requirements || requirements,
+      candidates: candidates.map((candidate) => ({
+        ...candidate,
+        physicochemicalMetrics: calculatePeptideMetrics(candidate.sequence),
+      })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `cv-pepfind-${taskId}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
   };
@@ -578,11 +660,15 @@ export function WorkLayout() {
                 </Card>
 
                 <Card className="min-w-0 rounded-2xl border-border/80 bg-card/55">
-                  <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 px-4 pb-3 pt-4 sm:px-5"><CardTitle className="flex min-w-0 items-center gap-2 text-sm"><Dna className="h-4 w-4 shrink-0 text-emerald-300" /><span className="truncate">候选多肽</span></CardTitle><Button type="button" variant="ghost" size="sm" onClick={handleExport} disabled={candidates.length === 0} className="h-7 shrink-0 px-2 text-[10px]"><Download className="mr-1 h-3 w-3" />导出</Button></CardHeader>
+                  <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 px-4 pb-3 pt-4 sm:px-5">
+                    <div className="min-w-0"><CardTitle className="flex min-w-0 items-center gap-2 text-sm"><Dna className="h-4 w-4 shrink-0 text-emerald-300" /><span className="truncate">候选多肽</span></CardTitle>{candidates.length > 0 && <p className="mt-1 text-[10px] text-muted-foreground">已选择 <span className="font-mono text-emerald-200">{selectedCandidateKeys.length}/3</span> · 选择至少 2 个进行对比</p>}</div>
+                    <div className="flex shrink-0 items-center gap-0.5"><Button type="button" variant="outline" size="sm" onClick={() => setComparisonOpen(true)} disabled={selectedCandidates.length < 2} className="h-7 border-emerald-400/25 px-2 text-[10px] text-emerald-200 hover:bg-emerald-400/10"><Columns3 className="mr-1 h-3.5 w-3.5" />对比</Button><Button type="button" variant="ghost" size="sm" onClick={handleExport} disabled={candidates.length === 0} className="h-7 px-1.5 text-[10px]"><Download className="mr-1 h-3 w-3" />CSV</Button><Button type="button" variant="ghost" size="sm" onClick={handleExportJSON} disabled={candidates.length === 0} className="h-7 px-1.5 text-[10px]">JSON</Button></div>
+                  </CardHeader>
                   <CardContent className="space-y-2 px-4 pb-4 sm:px-5">
-                    {candidates.length === 0 ? <div className="rounded-xl border border-dashed border-border p-4 text-center text-xs leading-5 text-muted-foreground">候选序列将在通过性质分析和亲和力评估后出现。</div> : candidates.map((candidate, index) => <CandidateDetailCard key={`${candidate.sequence}-${index}`} candidate={candidate} index={index} />)}
+                    {candidates.length === 0 ? <div className="rounded-xl border border-dashed border-border p-4 text-center text-xs leading-5 text-muted-foreground">候选序列将在通过性质分析和亲和力评估后出现。</div> : candidates.map((candidate, index) => <CandidateDetailCard key={candidateKey(candidate)} candidate={candidate} index={index} selected={selectedCandidateKeys.includes(candidateKey(candidate))} selectionDisabled={!selectedCandidateKeys.includes(candidateKey(candidate)) && selectedCandidateKeys.length >= 3} onSelectionChange={(checked) => handleCandidateSelection(candidate, index, checked)} />)}
                   </CardContent>
                 </Card>
+                <CandidateComparisonDialog open={comparisonOpen} onOpenChange={setComparisonOpen} candidates={selectedCandidates} />
               </>
             )}
 
