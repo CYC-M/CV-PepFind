@@ -4,6 +4,7 @@ import { extractWorkTarget } from '../shared/workRequest';
 describe('extractWorkTarget', () => {
   it('extracts common protein symbols from natural-language design requests', () => {
     expect(extractWorkTarget('为 IL-6 设计高亲和力、低毒性多肽')).toBe('IL-6');
+    expect(extractWorkTarget('为 PD-1 设计高亲和力多肽')).toBe('PD-1');
     expect(extractWorkTarget('靶向 PD-L1，生成稳定的候选多肽')).toBe('PD-L1');
   });
 

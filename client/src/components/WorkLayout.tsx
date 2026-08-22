@@ -19,6 +19,7 @@ import {
   Sparkles,
   Square,
   Target,
+  Trophy,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ import { trpc } from '@/lib/trpc';
 import { calculatePeptideMetrics } from '@shared/peptideMetrics';
 import { CANDIDATE_COMPARISON_METRICS, getCandidateComparisonValue, retainAvailableCandidateSelections } from '@shared/candidateComparison';
 import { extractWorkTarget } from '@shared/workRequest';
+import { getWorkPhaseProgress } from '@shared/workStages';
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed']);
 
@@ -83,6 +85,12 @@ type WorkCandidate = {
   rank: number;
   timestamp?: number;
 };
+
+const COMMON_WORK_PROMPTS = [
+  '为 PD-1 设计高亲和力多肽',
+  '为 IL-6 设计低毒性、稳定的候选多肽',
+  '靶向 EGFR，筛选适合细胞外结合的多肽',
+];
 
 function formatDuration(startTime?: number, endTime?: number) {
   if (!startTime) return '—';
@@ -139,9 +147,9 @@ function CandidateComparisonDialog({ open, onOpenChange, candidates }: { open: b
 }
 
 function FlowMessage({ step, status, progress }: { step?: WorkStep; status: WorkStatus; progress: number }) {
-  const stages = ['初始化', '生成序列', '性质分析', '过滤序列', '分子对接', '亲和力评估', '排序候选', '完成'];
-  const current = step?.stepNumber ?? (status === 'completed' ? 8 : 0);
-  return <div className="flex gap-2.5"><AgentAvatar processing={status === 'running'} /><div className="min-w-0 flex-1 rounded-2xl rounded-tl-sm border border-border bg-card px-3 py-3"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold">{status === 'completed' ? '设计流程已完成' : '设计流程更新'}</p><p className="mt-0.5 text-[10px] text-muted-foreground">{step?.description || '任务将按既定的八个步骤执行。'}</p></div><span className="font-mono text-xs text-primary">{Math.round(progress)}%</span></div><Progress value={progress} className="mt-3 h-1.5 bg-muted" /><div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-4">{stages.map((label, index) => { const number = index + 1; const done = number < current || status === 'completed'; const active = number === current && status !== 'completed'; return <span key={label} className={`flex min-w-0 items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[10px] ${active ? 'border-primary/35 bg-primary/10 text-primary' : done ? 'border-emerald-400/20 bg-emerald-400/[0.05] text-emerald-200' : 'border-border/60 bg-background/35 text-muted-foreground'}`}>{done ? <CheckCircle2 className="h-3 w-3 shrink-0" /> : <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-muted font-mono text-[8px]">{number}</span>}<span className="truncate">{label}</span></span>; })}</div></div></div>;
+  const phases = getWorkPhaseProgress(step?.stepNumber, progress, status);
+  const phaseIcons = [Dna, FlaskConical, Trophy];
+  return <div className="flex gap-2.5"><AgentAvatar processing={status === 'running'} /><div className="min-w-0 flex-1 rounded-2xl rounded-tl-sm border border-border bg-card px-3 py-3"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold">{status === 'completed' ? '设计流程已完成' : '设计流程更新'}</p><p className="mt-0.5 text-[10px] text-muted-foreground">{step?.description || '任务将按既定的八个步骤执行。'}</p></div><span className="font-mono text-xs text-primary">{Math.round(progress)}%</span></div><Progress value={progress} className="mt-3 h-1.5 bg-muted" /><div className="mt-3 grid gap-2 sm:grid-cols-3">{phases.map((phase, index) => { const Icon = phaseIcons[index]; const active = phase.state === 'active'; const completed = phase.state === 'completed'; const failed = phase.state === 'failed'; return <div key={phase.id} className={`rounded-xl border p-2.5 transition-colors ${active ? 'border-primary/40 bg-primary/[0.07]' : completed ? 'border-emerald-400/25 bg-emerald-400/[0.05]' : failed ? 'border-rose-400/30 bg-rose-400/[0.05]' : 'border-border/60 bg-background/35'}`}><div className="flex items-center justify-between gap-2"><span className="flex min-w-0 items-center gap-1.5"><span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${active ? 'bg-primary/15 text-primary' : completed ? 'bg-emerald-400/10 text-emerald-300' : failed ? 'bg-rose-400/10 text-rose-300' : 'bg-muted text-muted-foreground'}`}>{completed ? <CheckCircle2 className="h-3 w-3" /> : <Icon className="h-3 w-3" />}</span><span className="truncate text-[10px] font-semibold">{phase.label}</span></span><span className={`shrink-0 font-mono text-[10px] ${active ? 'text-primary' : completed ? 'text-emerald-300' : failed ? 'text-rose-300' : 'text-muted-foreground'}`}>{completed ? '完成' : failed ? '失败' : phase.state === 'paused' ? '暂停' : `${phase.progress}%`}</span></div><p className="mt-1.5 truncate text-[9px] text-muted-foreground">{phase.description}</p><Progress value={phase.progress} className="mt-2 h-1 bg-muted" /></div>; })}</div></div></div>;
 }
 
 function LogMessage({ log, isLatest }: { log: WorkLog; isLatest: boolean }) {
@@ -239,7 +247,7 @@ export function WorkLayout() {
 
       {showSequenceInput && <div className="shrink-0 px-3 pb-2"><Textarea value={targetSequence} onChange={(event) => setTargetSequence(event.target.value)} disabled={isBusy || Boolean(taskId)} placeholder="可选：粘贴靶点 FASTA 序列" className="min-h-16 resize-y border-border bg-input/70 font-mono text-[10px]" aria-label="靶点 FASTA 序列" /></div>}
       {formError && <div role="alert" className="mx-3 mb-2 flex shrink-0 items-start gap-2 rounded-lg border border-rose-400/25 bg-rose-400/5 p-2.5 text-[11px] leading-5 text-rose-200"><AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{formError}</div>}
-      <div className="shrink-0 px-3 pb-3"><div className="relative flex items-end gap-2 rounded-xl border border-border bg-input p-2.5 transition-all focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20"><Textarea value={requirements} onChange={(event) => setRequirements(event.target.value)} disabled={isBusy || Boolean(taskId)} placeholder="例如：为 IL-6 设计高亲和力、低毒性多肽…" rows={1} className="min-h-5 max-h-24 flex-1 resize-y border-0 bg-transparent p-0 text-sm leading-5 shadow-none focus-visible:ring-0" onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !taskId && requirements.trim()) { event.preventDefault(); void handleStart(); } }} aria-label="多肽设计任务" />{!taskId ? <button type="button" onClick={() => void handleStart()} disabled={!requirements.trim() || createTask.isPending || startTask.isPending} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40" aria-label="开始自主设计">{createTask.isPending || startTask.isPending ? <Loader2 className={`h-3.5 w-3.5 ${reducedMotion ? '' : 'animate-spin'}`} /> : <Send className="h-3.5 w-3.5" />}</button> : <button type="button" onClick={handleReset} disabled={isBusy} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all hover:bg-muted hover:text-foreground disabled:opacity-40" aria-label="新建任务"><RotateCcw className="h-3.5 w-3.5" /></button>}</div></div>
+      <div className="shrink-0 px-3 pb-3"><div className="relative flex items-end gap-2 rounded-xl border border-border bg-input p-2.5 transition-all focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20"><Textarea value={requirements} onChange={(event) => setRequirements(event.target.value)} disabled={isBusy || Boolean(taskId)} placeholder="例如：为 IL-6 设计高亲和力、低毒性多肽…" rows={1} className="min-h-5 max-h-24 flex-1 resize-y border-0 bg-transparent p-0 text-sm leading-5 shadow-none focus-visible:ring-0" onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !taskId && requirements.trim()) { event.preventDefault(); void handleStart(); } }} aria-label="多肽设计任务" />{!taskId ? <button type="button" onClick={() => void handleStart()} disabled={!requirements.trim() || createTask.isPending || startTask.isPending} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40" aria-label="开始自主设计">{createTask.isPending || startTask.isPending ? <Loader2 className={`h-3.5 w-3.5 ${reducedMotion ? '' : 'animate-spin'}`} /> : <Send className="h-3.5 w-3.5" />}</button> : <button type="button" onClick={handleReset} disabled={isBusy} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all hover:bg-muted hover:text-foreground disabled:opacity-40" aria-label="新建任务"><RotateCcw className="h-3.5 w-3.5" /></button>}</div>{!taskId && <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none" aria-label="常见任务提示词"><span className="shrink-0 py-1.5 text-[9px] font-medium text-muted-foreground">常见任务</span>{COMMON_WORK_PROMPTS.map((prompt) => <button key={prompt} type="button" onClick={() => { setRequirements(prompt); setFormError(null); }} className="shrink-0 rounded-lg border border-transparent bg-muted px-2.5 py-1.5 text-[10px] text-muted-foreground transition-colors hover:border-primary/25 hover:bg-primary/[0.06] hover:text-foreground">{prompt}</button>)}</div>}</div>
       <CandidateComparisonDialog open={comparisonOpen} onOpenChange={setComparisonOpen} candidates={selectedCandidates} />
     </section>
   );
