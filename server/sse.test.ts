@@ -24,6 +24,7 @@ vi.mock("./db", () => ({
   saveStructurePrediction: vi.fn().mockResolvedValue(undefined),
   saveDockingResults: vi.fn().mockResolvedValue(undefined),
   upsertChatSession: vi.fn().mockResolvedValue(undefined),
+  updateSessionTitleIfEmpty: vi.fn().mockResolvedValue(undefined),
   saveChatMessage: vi.fn().mockResolvedValue(undefined),
   getChatHistory: vi.fn().mockResolvedValue([]),
   getRecentChatSessions: vi.fn().mockResolvedValue([]),
@@ -196,7 +197,12 @@ describe("Agent SSE endpoint (/api/agent/stream)", () => {
   let app: Express;
 
   beforeEach(async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(createMockLLMStream()));
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((input: unknown) => {
+      if (String(input).includes('rest.uniprot.org')) {
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({ results: [] }) });
+      }
+      return Promise.resolve(createMockLLMStream());
+    }));
     app = express();
     app.use(express.json());
     const { registerAgentSSE } = await import("./routers");

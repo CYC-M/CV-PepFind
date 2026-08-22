@@ -27,6 +27,17 @@ export interface DesignStepInfo {
   estimatedDuration?: number;
 }
 
+const STEP_ORDER: DesignStep[] = [
+  'initializing',
+  'generating_sequences',
+  'analyzing_properties',
+  'filtering_sequences',
+  'docking_simulation',
+  'evaluating_affinity',
+  'ranking_candidates',
+  'completed',
+];
+
 const STEP_CONFIG: Record<DesignStep, { label: string; icon: React.ReactNode; color: string; emoji: string }> = {
   initializing: {
     label: '初始化',
@@ -124,7 +135,7 @@ export function DesignStepIndicator({ stepInfo, isRunning = false, error = null 
                 <motion.div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-all ${
                     isActive
-                      ? `bg-gradient-to-r ${config.color} text-white shadow-lg shadow-${config.color.split('-')[1]}-500/50`
+                      ? `bg-gradient-to-r ${config.color} text-white shadow-lg shadow-primary/20`
                       : isDone
                       ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                       : 'bg-muted text-muted-foreground border border-border'
@@ -155,7 +166,7 @@ export function DesignStepIndicator({ stepInfo, isRunning = false, error = null 
                 <span className={`text-xs font-medium text-center leading-tight ${
                   isActive || isDone ? 'text-foreground' : 'text-muted-foreground'
                 }`}>
-                  {stepNum}
+                  {STEP_CONFIG[STEP_ORDER[idx]]?.label ?? stepNum}
                 </span>
               </div>
 

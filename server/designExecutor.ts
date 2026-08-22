@@ -6,6 +6,7 @@
 import { generatePeptideSequences } from './llmSequenceGenerator';
 import { analyzeSequence } from './sequenceEngine';
 import { batchDocking } from './structureEngine';
+import { optimizePeptideSequences, type PeptideOptimizationStrategy } from './peptideOptimization';
 import { DesignTaskConfig, DesignCandidate } from './designTaskQueue';
 
 export type DesignStep = 
@@ -82,15 +83,44 @@ export async function executeDesignIteration(
       },
     });
 
-    reportStep('generating_sequences', 2, `已生成 ${generatedSequences.length} 个候选序列`, 40);
+    const optimizationStrategy: PeptideOptimizationStrategy | null =
+      config.generationStrategy === 'optimization' ? 'genetic' : config.generationStrategy === 'hybrid' ? 'hybrid' : null;
+    const optimizedSequences = optimizationStrategy
+      ? optimizePeptideSequences(
+          generatedSequences.map(item => item.sequence),
+          {
+            strategy: optimizationStrategy,
+            minLength: config.designParameters.minLength,
+            maxLength: config.designParameters.maxLength,
+            maxResults: Math.min(10, config.topCandidates),
+          },
+        )
+      : [];
+    const sequencesForAnalysis = [
+      ...generatedSequences,
+      ...optimizedSequences
+        .filter(item => !generatedSequences.some(seed => seed.sequence === item.sequence))
+        .map(item => ({
+          sequence: item.sequence,
+          rationale: `由${item.strategy === 'hybrid' ? '遗传算法与模拟退火' : '模拟退火'}优化得到`,
+          confidence: item.score / 100,
+        })),
+    ];
+
+    reportStep('generating_sequences', 2, `已生成 ${sequencesForAnalysis.length} 个候选序列`, 40);
     onLog(`[迭代 ${iteration}] 生成了 ${generatedSequences.length} 个候选序列`, {
-      thinking: `LLM 已生成 ${generatedSequences.length} 个候选序列。现在进行序列性质分析和过滤。`,
+      thinking: optimizedSequences.length > 0
+        ? `LLM 已生成 ${generatedSequences.length} 个种子序列，并通过${optimizationStrategy === 'hybrid' ? '遗传算法与模拟退火' : '遗传算法'}扩展搜索。现在进行序列性质分析和过滤。`
+        : `LLM 已生成 ${generatedSequences.length} 个候选序列。现在进行序列性质分析和过滤。`,
+      metrics: {
+        generatedCount: generatedSequences.length,
+        optimizedCount: optimizedSequences.length,
+        analysisCount: sequencesForAnalysis.length,
+        optimizationStrategy,
+      },
       intermediateResults: {
         generatedCount: generatedSequences.length,
-        sequences: generatedSequences.map(s => ({
-          sequence: s.sequence,
-          confidence: s.confidence,
-        })),
+        optimizedSequences: optimizedSequences.map(item => item.sequence),
       },
     });
 
@@ -100,7 +130,7 @@ export async function executeDesignIteration(
       thinking: `分析每个生成序列的物理化学性质，包括：\n- 疏水性\n- 电荷\n- 不稳定性指数\n- 极性\n- 芳香性`,
     });
 
-    const analyzedSequences = generatedSequences
+    const analyzedSequences = sequencesForAnalysis
       .map(gen => {
         try {
           const analysis = analyzeSequence(gen.sequence);

@@ -3,10 +3,7 @@
  * Supports job creation, progress tracking, and result streaming
  */
 
-import { analyzeSequence } from './sequenceEngine';
-import { batchDocking } from './structureEngine';
-import { executeDesignIteration, type DesignExecutionContext } from './designExecutor';
-import { generatePeptideSequences } from './llmSequenceGenerator';
+import { executeDesignIteration, type DesignExecutionContext, type DesignStepInfo } from './designExecutor';
 
 export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'paused';
 
@@ -38,6 +35,19 @@ export interface DesignCandidate {
   timestamp: number;
 }
 
+export interface DesignTaskLog {
+  timestamp: number;
+  level: 'info' | 'success' | 'warning' | 'error';
+  message: string;
+  details?: {
+    thinking?: string;
+    intermediateResults?: unknown;
+    metrics?: Record<string, unknown>;
+    reasoning?: string;
+    error?: string;
+  };
+}
+
 export interface DesignTaskResult {
   taskId: string;
   status: TaskStatus;
@@ -48,6 +58,8 @@ export interface DesignTaskResult {
   startTime: number;
   endTime?: number;
   error?: string;
+  currentStep?: DesignStepInfo;
+  logs: DesignTaskLog[];
 }
 
 export interface DesignTaskEvent {
@@ -60,43 +72,6 @@ export interface DesignTaskEvent {
 // In-memory task storage (in production, use database)
 const taskStore = new Map<string, DesignTaskResult>();
 const taskListeners = new Map<string, Set<(event: DesignTaskEvent) => void>>();
-
-/**
- * Generate random peptide sequence
- */
-function generateRandomSequence(length: number): string {
-  const aminoAcids = 'ACDEFGHIKLMNPQRSTVWY';
-  let sequence = '';
-  for (let i = 0; i < length; i++) {
-    sequence += aminoAcids[Math.floor(Math.random() * aminoAcids.length)];
-  }
-  return sequence;
-}
-
-/**
- * Generate optimized sequence based on target properties
- */
-function generateOptimizedSequence(targetSequence: string, length: number): string {
-  // Simple strategy: bias towards amino acids similar to target
-  const targetAAs = new Map<string, number>();
-  for (const aa of targetSequence) {
-    targetAAs.set(aa, (targetAAs.get(aa) || 0) + 1);
-  }
-
-  const sortedAAs = Array.from(targetAAs.entries())
-    .sort((a, b) => b[1] - a[1])
-    .map(([aa]) => aa);
-
-  let sequence = '';
-  for (let i = 0; i < length; i++) {
-    if (Math.random() < 0.7 && sortedAAs.length > 0) {
-      sequence += sortedAAs[Math.floor(Math.random() * Math.min(3, sortedAAs.length))];
-    } else {
-      sequence += 'ACDEFGHIKLMNPQRSTVWY'[Math.floor(Math.random() * 20)];
-    }
-  }
-  return sequence;
-}
 
 /**
  * Create new design task
@@ -113,6 +88,7 @@ export function createDesignTask(
     iteration: 0,
     progress: 0,
     startTime: Date.now(),
+    logs: [],
   };
 
   taskStore.set(taskId, task);
@@ -183,17 +159,34 @@ export async function runDesignTask(taskId: string): Promise<void> {
       config,
       iteration: 0,
       candidates: [],
-      onProgress: (progress: number, iteration: number, candidatesFound: number) => {
+            onProgress: (progress: number, iteration: number, candidatesFound: number) => {
+
         task.iteration = iteration;
         task.progress = progress;
         
         emitTaskEvent({
           type: 'progress',
           taskId,
+                      data: {
+              iteration,
+              progress,
+              candidatesFound,
+              currentStep: task.currentStep,
+            },
+
+          timestamp: Date.now(),
+        });
+      },
+      onStepChange: (stepInfo) => {
+        task.currentStep = stepInfo;
+        emitTaskEvent({
+          type: 'progress',
+          taskId,
           data: {
-            iteration,
-            progress,
-            candidatesFound,
+            iteration: task.iteration,
+            progress: task.progress,
+            candidatesFound: task.candidates.length,
+            currentStep: stepInfo,
           },
           timestamp: Date.now(),
         });
@@ -213,6 +206,29 @@ export async function runDesignTask(taskId: string): Promise<void> {
         });
       },
       onLog: (message: string, details?: any) => {
+        const rawDetails = details && typeof details === 'object' ? details : undefined;
+        const level: DesignTaskLog['level'] = rawDetails?.error
+          ? 'error'
+          : message.includes('发现高亲和力') || message.includes('完成')
+            ? 'success'
+            : message.includes('失败') || message.includes('错误')
+              ? 'warning'
+              : 'info';
+        const log: DesignTaskLog = {
+          timestamp: Date.now(),
+          level,
+          message,
+          details: rawDetails
+            ? {
+                thinking: typeof rawDetails.thinking === 'string' ? rawDetails.thinking : undefined,
+                intermediateResults: rawDetails.intermediateResults,
+                metrics: rawDetails.metrics && typeof rawDetails.metrics === 'object' ? rawDetails.metrics : undefined,
+                reasoning: typeof rawDetails.reasoning === 'string' ? rawDetails.reasoning : undefined,
+                error: typeof rawDetails.error === 'string' ? rawDetails.error : undefined,
+              }
+            : undefined,
+        };
+        task.logs = [...task.logs.slice(-119), log];
         console.log(`[${taskId}] ${message}`, details);
       },
     };

@@ -1,4 +1,44 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+vi.mock('./designExecutor', () => ({
+  executeDesignIteration: vi.fn(async (context: any) => {
+    await new Promise(resolve => setTimeout(resolve, 8));
+
+    context.onStepChange?.({
+      step: 'generating_sequences',
+      stepNumber: 2,
+      totalSteps: 8,
+      description: '生成测试候选序列',
+      progress: 45,
+      startTime: Date.now(),
+    });
+    context.onLog('测试迭代：生成候选序列', {
+      thinking: '使用隔离的测试执行器，验证队列能够保存 Agent 过程摘要。',
+      metrics: { generatedCount: 1 },
+    });
+
+    const candidate = {
+      sequence: `ACDEFGHIK${context.iteration}`,
+      sequenceScore: 0.9,
+      affinityScore: -8.5,
+      combinedScore: 0.92,
+      rank: 1,
+      timestamp: Date.now(),
+    };
+    context.onCandidate(candidate);
+    context.onProgress(90, context.iteration, context.candidates.length + 1);
+    context.onStepChange?.({
+      step: 'completed',
+      stepNumber: 8,
+      totalSteps: 8,
+      description: '测试迭代完成',
+      progress: 100,
+      startTime: Date.now(),
+    });
+
+    return [candidate];
+  }),
+}));
+
 import {
   createDesignTask,
   getDesignTask,
@@ -331,6 +371,22 @@ describe('designTaskQueue', () => {
 
       const completedEvents = events.filter(e => e.type === 'completed');
       expect(completedEvents.length).toBe(1);
+    });
+
+    it('should retain thinking logs and current step state', async () => {
+      createDesignTask(taskId, config);
+
+      await runDesignTask(taskId);
+
+      const task = getDesignTask(taskId);
+      expect(task?.currentStep).toMatchObject({
+        step: 'completed',
+        stepNumber: 8,
+        totalSteps: 8,
+        progress: 100,
+      });
+      expect(task?.logs.some(log => log.details?.thinking?.includes('隔离的测试执行器'))).toBe(true);
+      expect(task?.logs.some(log => log.details?.metrics?.generatedCount === 1)).toBe(true);
     });
   });
 

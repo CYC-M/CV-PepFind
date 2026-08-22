@@ -13,9 +13,7 @@ import {
   cancelDesignTask,
   getTopCandidates,
   exportCandidatesAsCSV,
-  subscribeToTask,
   type DesignTaskConfig,
-  type DesignTaskConfigInput,
 } from './designTaskQueue';
 
 const DesignParametersSchema = z.object({
@@ -99,6 +97,13 @@ export const designTaskRouter = router({
       error: task.error,
       startTime: task.startTime,
       endTime: task.endTime,
+      currentStep: task.currentStep,
+      logs: task.logs.slice(-80),
+      config: {
+        targetProtein: task.config.targetProtein,
+        targetSequence: task.config.targetSequence,
+        requirements: task.config.requirements,
+      },
     };
   }),
 

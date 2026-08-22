@@ -319,7 +319,7 @@ describe("LLM Sequence Generator", () => {
             message: {
               content: JSON.stringify([
                 { sequence: "YPWMKGGGS", rationale: "Valid", confidence: 0.9 },
-                { sequence: "INVALID", rationale: "Invalid", confidence: 0.5 },
+                { sequence: "INVALIDX", rationale: "Invalid", confidence: 0.5 },
               ]),
             },
           },
