@@ -401,4 +401,11 @@
 - [x] 保留任务启动、暂停、恢复、停止、导出和候选详情交互
 - [x] 验证桌面和手机端 Work 与 Chat 视觉、滚动和键盘交互的一致性
 - [x] 运行 TypeScript、Vitest、生产构建并保存完全同构检查点
-- [ ] 保存 Work 与 Chat 完全同构检查点
+- [x] 保存 Work 与 Chat 完全同构检查点
+
+## 无限更新错误修复（本轮）
+- [x] 定位 Work/Chat 页面中触发 Maximum update depth exceeded 的状态副作用
+- [x] 修复不稳定依赖或无变化状态写入并保持候选选择逻辑正确
+- [x] 添加针对稳定状态同步的回归测试
+- [x] 验证 Chat 与 Work 页面无无限更新错误，并通过 TypeScript 与 Vitest
+- [ ] 保存无限更新修复检查点

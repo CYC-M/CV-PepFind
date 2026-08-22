@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CANDIDATE_COMPARISON_METRICS, getCandidateComparisonValue } from '../shared/candidateComparison';
+import { CANDIDATE_COMPARISON_METRICS, getCandidateComparisonValue, retainAvailableCandidateSelections } from '../shared/candidateComparison';
 
 const candidate = {
   sequence: 'ACDEFGHIK',
@@ -25,5 +25,19 @@ describe('candidate comparison metrics', () => {
 
   it('returns a safe placeholder for an unknown comparison field', () => {
     expect(getCandidateComparisonValue(candidate, 'missing')).toBe('—');
+  });
+
+  it('retains the original selection reference when candidate membership is unchanged', () => {
+    const selected = ['ACDEFGHIK', 'KLMNPQRST'];
+    const next = retainAvailableCandidateSelections(selected, [
+      { sequence: 'ACDEFGHIK' },
+      { sequence: 'KLMNPQRST' },
+    ]);
+
+    expect(next).toBe(selected);
+  });
+
+  it('removes only selections that disappear after a candidate update', () => {
+    expect(retainAvailableCandidateSelections(['ACDEFGHIK', 'STALE'], [{ sequence: 'ACDEFGHIK' }])).toEqual(['ACDEFGHIK']);
   });
 });

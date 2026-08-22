@@ -30,7 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { PeptideLink } from '@/components/PeptideLink';
 import { trpc } from '@/lib/trpc';
 import { calculatePeptideMetrics } from '@shared/peptideMetrics';
-import { CANDIDATE_COMPARISON_METRICS, getCandidateComparisonValue } from '@shared/candidateComparison';
+import { CANDIDATE_COMPARISON_METRICS, getCandidateComparisonValue, retainAvailableCandidateSelections } from '@shared/candidateComparison';
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed']);
 
@@ -173,7 +173,7 @@ export function WorkLayout() {
   const status = statusQuery.data;
   const currentStatus = (status?.status ?? 'pending') as WorkStatus;
   const logs = (status?.logs ?? []) as WorkLog[];
-  const candidates = (status?.topCandidates ?? []) as WorkCandidate[];
+  const candidates = useMemo(() => (status?.topCandidates ?? []) as WorkCandidate[], [status?.topCandidates]);
   const step = status?.currentStep as WorkStep | undefined;
   const candidateKey = (candidate: WorkCandidate) => candidate.sequence;
   const selectedCandidates = candidates.filter((candidate) => selectedCandidateKeys.includes(candidateKey(candidate)));
@@ -187,8 +187,9 @@ export function WorkLayout() {
     return formatDuration(Date.now(), Date.now() + Math.max(0, total - elapsed));
   }, [status?.progress, status?.startTime, isTerminal]);
 
-  useEffect(() => { if (taskId) void utils.designTask.getStatus.invalidate({ taskId }); }, [taskId, utils.designTask.getStatus]);
-  useEffect(() => { const active = candidates.map(candidateKey); setSelectedCandidateKeys((current) => current.filter((key) => active.includes(key))); }, [candidates]);
+  useEffect(() => {
+    setSelectedCandidateKeys((current) => retainAvailableCandidateSelections(current, candidates));
+  }, [candidates]);
 
   const handleStart = async () => {
     const protein = targetProtein.trim();

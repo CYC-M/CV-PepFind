@@ -40,3 +40,14 @@ export function getCandidateComparisonValue(candidate: ComparableCandidate, key:
     default: return '—';
   }
 }
+
+/**
+ * Keeps only selections that still exist in the latest ranked candidate list.
+ * Returns the original array when there is no effective change so React state
+ * synchronisation can avoid scheduling a redundant render.
+ */
+export function retainAvailableCandidateSelections(selectedKeys: readonly string[], candidates: readonly Pick<ComparableCandidate, 'sequence'>[]): string[] {
+  const available = new Set(candidates.map((candidate) => candidate.sequence));
+  const next = selectedKeys.filter((key) => available.has(key));
+  return next.length === selectedKeys.length ? selectedKeys as string[] : next;
+}
