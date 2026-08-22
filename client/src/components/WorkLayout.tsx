@@ -24,13 +24,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { PeptideLink } from '@/components/PeptideLink';
 import { trpc } from '@/lib/trpc';
 import { calculatePeptideMetrics } from '@shared/peptideMetrics';
 import { CANDIDATE_COMPARISON_METRICS, getCandidateComparisonValue, retainAvailableCandidateSelections } from '@shared/candidateComparison';
+import { extractWorkTarget } from '@shared/workRequest';
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed']);
 
@@ -154,7 +154,7 @@ function LogMessage({ log, isLatest }: { log: WorkLog; isLatest: boolean }) {
 export function WorkLayout() {
   const [targetProtein, setTargetProtein] = useState('');
   const [targetSequence, setTargetSequence] = useState('');
-  const [requirements, setRequirements] = useState('高亲和力、低毒性、具备良好的稳定性');
+  const [requirements, setRequirements] = useState('');
   const [taskId, setTaskId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [selectedCandidateKeys, setSelectedCandidateKeys] = useState<string[]>([]);
@@ -192,10 +192,11 @@ export function WorkLayout() {
   }, [candidates]);
 
   const handleStart = async () => {
-    const protein = targetProtein.trim();
-    if (!protein) { setFormError('请输入需要亲和的靶点名称。'); return; }
+    const protein = targetProtein.trim() || extractWorkTarget(requirements);
+    if (!protein) { setFormError('请在任务中说明靶点，例如“为 IL-6 设计高亲和力、低毒性多肽”。'); return; }
     setFormError(null);
     try {
+      setTargetProtein(protein);
       const created = await createTask.mutateAsync({ targetProtein: protein, targetSequence: targetSequence.trim() || undefined, requirements: requirements.trim() || undefined });
       setTaskId(created.taskId);
       await startTask.mutateAsync({ taskId: created.taskId });
@@ -238,7 +239,7 @@ export function WorkLayout() {
 
       {showSequenceInput && <div className="shrink-0 px-3 pb-2"><Textarea value={targetSequence} onChange={(event) => setTargetSequence(event.target.value)} disabled={isBusy || Boolean(taskId)} placeholder="可选：粘贴靶点 FASTA 序列" className="min-h-16 resize-y border-border bg-input/70 font-mono text-[10px]" aria-label="靶点 FASTA 序列" /></div>}
       {formError && <div role="alert" className="mx-3 mb-2 flex shrink-0 items-start gap-2 rounded-lg border border-rose-400/25 bg-rose-400/5 p-2.5 text-[11px] leading-5 text-rose-200"><AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{formError}</div>}
-      <div className="shrink-0 px-3 pb-3"><div className="space-y-1.5"><Input value={targetProtein} onChange={(event) => setTargetProtein(event.target.value)} disabled={isBusy || Boolean(taskId)} placeholder="亲和靶点（例如 IL-6、PD-L1）" className="h-8 border-border bg-input/70 text-xs" aria-label="亲和靶点" /><div className="relative flex items-end gap-2 rounded-xl border border-border bg-input p-2.5 transition-all focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20"><Textarea value={requirements} onChange={(event) => setRequirements(event.target.value)} disabled={isBusy || Boolean(taskId)} placeholder="输入设计需求，Enter 开始自主设计…" rows={1} className="min-h-5 max-h-24 flex-1 resize-y border-0 bg-transparent p-0 text-sm leading-5 shadow-none focus-visible:ring-0" onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !taskId && targetProtein.trim()) { event.preventDefault(); void handleStart(); } }} aria-label="设计需求" />{!taskId ? <button type="button" onClick={() => void handleStart()} disabled={!targetProtein.trim() || createTask.isPending || startTask.isPending} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40" aria-label="开始自主设计">{createTask.isPending || startTask.isPending ? <Loader2 className={`h-3.5 w-3.5 ${reducedMotion ? '' : 'animate-spin'}`} /> : <Send className="h-3.5 w-3.5" />}</button> : <button type="button" onClick={handleReset} disabled={isBusy} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all hover:bg-muted hover:text-foreground disabled:opacity-40" aria-label="新建任务"><RotateCcw className="h-3.5 w-3.5" /></button>}</div></div></div>
+      <div className="shrink-0 px-3 pb-3"><div className="relative flex items-end gap-2 rounded-xl border border-border bg-input p-2.5 transition-all focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20"><Textarea value={requirements} onChange={(event) => setRequirements(event.target.value)} disabled={isBusy || Boolean(taskId)} placeholder="例如：为 IL-6 设计高亲和力、低毒性多肽…" rows={1} className="min-h-5 max-h-24 flex-1 resize-y border-0 bg-transparent p-0 text-sm leading-5 shadow-none focus-visible:ring-0" onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !taskId && requirements.trim()) { event.preventDefault(); void handleStart(); } }} aria-label="多肽设计任务" />{!taskId ? <button type="button" onClick={() => void handleStart()} disabled={!requirements.trim() || createTask.isPending || startTask.isPending} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40" aria-label="开始自主设计">{createTask.isPending || startTask.isPending ? <Loader2 className={`h-3.5 w-3.5 ${reducedMotion ? '' : 'animate-spin'}`} /> : <Send className="h-3.5 w-3.5" />}</button> : <button type="button" onClick={handleReset} disabled={isBusy} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all hover:bg-muted hover:text-foreground disabled:opacity-40" aria-label="新建任务"><RotateCcw className="h-3.5 w-3.5" /></button>}</div></div>
       <CandidateComparisonDialog open={comparisonOpen} onOpenChange={setComparisonOpen} candidates={selectedCandidates} />
     </section>
   );

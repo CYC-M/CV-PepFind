@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import CVPepFindPanel from "@/components/CVPepFindPanel";
 import AIVisualizationPanel from "@/components/AIVisualizationPanel";
+import WorkVisualizationPanel from "@/components/WorkVisualizationPanel";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { WorkLayout } from "@/components/WorkLayout";
 import { AgentProvider } from "@/contexts/AgentContext";
@@ -231,7 +232,7 @@ export default function Home() {
               >
                 {!vizCollapsed && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full min-h-0">
-                    <AIVisualizationPanel />
+                    {desktopTab === 'work' ? <WorkVisualizationPanel /> : <AIVisualizationPanel />}
                   </motion.div>
                 )}
                 <button
