@@ -58,9 +58,9 @@ export default function WorkVisualizationPanel() {
                   <span className="min-w-0"><span className="block text-[9px] font-medium uppercase tracking-[0.13em] text-primary/85">Step 0{index + 1}</span><span className="block text-xs font-semibold text-foreground">{label}</span></span>
                 </motion.div>
               </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={12} className="z-[60] max-w-64 border border-border bg-popover text-popover-foreground shadow-xl">
-                <p className="font-semibold">{label}阶段</p>
-                <p className="mt-1 leading-relaxed text-popover-foreground/75">{description}</p>
+              <TooltipContent side="right" sideOffset={12} className="z-[60] max-w-64 border-primary/65 bg-popover text-popover-foreground shadow-2xl shadow-black/60 ring-primary/30 dark:border-primary/70 dark:bg-popover dark:text-popover-foreground dark:shadow-black/75 dark:ring-primary/40">
+                <p className="flex items-center gap-1.5 font-bold tracking-tight text-popover-foreground"><span className="rounded bg-primary/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-primary">Step 0{index + 1}</span>{label}阶段</p>
+                <p className="mt-1.5 leading-relaxed text-popover-foreground/90">{description}</p>
               </TooltipContent>
             </Tooltip>
           );
