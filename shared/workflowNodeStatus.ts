@@ -17,3 +17,29 @@ export function getWorkflowNodeStates(status: WorkflowTaskStatus, stepNumber?: n
     return 'running';
   }) as WorkflowNodeStatus[];
 }
+
+const workflowRanges = [
+  { start: 0, end: 0 },
+  { start: 0, end: 30 },
+  { start: 30, end: 55 },
+  { start: 55, end: 100 },
+];
+
+/** 返回工作台四阶段的局部完成度，供节点进度条与百分比读数使用。 */
+export function getWorkflowNodeProgress(status: WorkflowTaskStatus, stepNumber: number | undefined, overallProgress: number): number[] {
+  if (status === 'pending') return [0, 0, 0, 0];
+  if (status === 'completed') return [100, 100, 100, 100];
+
+  const states = getWorkflowNodeStates(status, stepNumber);
+  const normalizedProgress = Math.max(0, Math.min(100, overallProgress));
+
+  return states.map((nodeState, index) => {
+    if (nodeState === 'completed') return 100;
+    if (nodeState === 'waiting') return 0;
+    // 当前后端会在多轮迭代中重复报告候选构建步骤；运行节点直接使用真实总体进度，避免阶段尚未结束时提前显示 100%。
+    if (nodeState === 'running') return Math.min(99, normalizedProgress);
+    const range = workflowRanges[index];
+    if (range.end === range.start) return 100;
+    return Math.max(0, Math.min(100, Math.round(((normalizedProgress - range.start) / (range.end - range.start)) * 100)));
+  });
+}
