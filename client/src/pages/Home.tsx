@@ -55,10 +55,17 @@ export default function Home() {
   const [vizCollapsed, setVizCollapsed] = useState(false);
   const [desktopTab, setDesktopTab] = useState<'chat' | 'work'>(getInitialMode);
   const [mobileTab, setMobileTab] = useState<'chat' | 'work'>(getInitialMode);
+  const [visualFeedbackKey, setVisualFeedbackKey] = useState(0);
 
   const isMobile = useIsMobile();
   const shouldReduceMotion = useReducedMotion();
   const { data: history } = trpc.peptide.history.useQuery({ limit: 20 });
+
+  const changeDesktopTab = (tab: 'chat' | 'work') => {
+    if (tab === desktopTab) return;
+    setDesktopTab(tab);
+    if (!shouldReduceMotion) setVisualFeedbackKey((key) => key + 1);
+  };
 
   // ════════════════════════════════════════════════════════════════════════════
   // 历史记录侧边栏（桌面）/ 底部弹出（手机）
@@ -144,24 +151,26 @@ export default function Home() {
 
             {/* Chat / Work mode switch */}
             <div className="ml-auto flex items-center gap-1 rounded-xl border border-border bg-background/45 p-1" role="tablist" aria-label="工作模式">
-              <button
+              <motion.button
                 type="button"
                 role="tab"
                 aria-selected={desktopTab === 'chat'}
-                onClick={() => setDesktopTab('chat')}
+                onClick={() => changeDesktopTab('chat')}
                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${desktopTab === 'chat' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
               >
                 Chat
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 type="button"
                 role="tab"
                 aria-selected={desktopTab === 'work'}
-                onClick={() => setDesktopTab('work')}
+                onClick={() => changeDesktopTab('work')}
                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${desktopTab === 'work' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
               >
                 Work
-              </button>
+              </motion.button>
             </div>
 
             {/* Right controls */}
@@ -245,6 +254,19 @@ export default function Home() {
                         {desktopTab === 'work' ? <WorkVisualizationPanel /> : <AIVisualizationPanel />}
                       </motion.div>
                     </AnimatePresence>
+                    <AnimatePresence>
+                      {visualFeedbackKey > 0 && !shouldReduceMotion && (
+                        <motion.span
+                          key={visualFeedbackKey}
+                          aria-hidden="true"
+                          initial={{ opacity: 0.45, scale: 0.72 }}
+                          animate={{ opacity: 0, scale: 1.48 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.34, ease: [0.23, 1, 0.32, 1] }}
+                          className="pointer-events-none absolute left-1/2 top-1/2 z-20 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/75 bg-primary/10 shadow-[0_0_34px_rgb(16_185_129_/_0.32)]"
+                        />
+                      )}
+                    </AnimatePresence>
                   </motion.div>
                 )}
                 <button
@@ -261,8 +283,8 @@ export default function Home() {
               <ResizableSidebar>
                 <div className="flex h-full min-h-0 flex-col">
                   <div className="flex shrink-0 items-center gap-2 border-b border-border bg-gradient-to-r from-background to-background/50 px-3 py-3">
-                    <button onClick={() => setDesktopTab('chat')} className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${desktopTab === 'chat' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'}`}>Chat</button>
-                    <button onClick={() => setDesktopTab('work')} className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${desktopTab === 'work' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'}`}>Work</button>
+                    <motion.button onClick={() => changeDesktopTab('chat')} whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }} className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${desktopTab === 'chat' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'}`}>Chat</motion.button>
+                    <motion.button onClick={() => changeDesktopTab('work')} whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }} className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${desktopTab === 'work' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'}`}>Work</motion.button>
                   </div>
                   <div className="min-h-0 flex-1 overflow-hidden">{desktopTab === 'work' ? <WorkLayout /> : <CVPepFindPanel />}</div>
                 </div>
