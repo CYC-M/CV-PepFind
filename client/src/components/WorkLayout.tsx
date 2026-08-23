@@ -29,6 +29,7 @@ import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { PeptideLink } from '@/components/PeptideLink';
 import { trpc } from '@/lib/trpc';
+import { useWorkProgress } from '@/contexts/WorkProgressContext';
 import { calculatePeptideMetrics } from '@shared/peptideMetrics';
 import { CANDIDATE_COMPARISON_METRICS, getCandidateComparisonValue, retainAvailableCandidateSelections } from '@shared/candidateComparison';
 import { extractWorkTarget } from '@shared/workRequest';
@@ -169,6 +170,7 @@ export function WorkLayout() {
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [showSequenceInput, setShowSequenceInput] = useState(false);
   const reducedMotion = useReducedMotion();
+  const { setProgress: setVisualizationProgress } = useWorkProgress();
 
   const createTask = trpc.designTask.create.useMutation();
   const startTask = trpc.designTask.start.useMutation();
@@ -194,6 +196,10 @@ export function WorkLayout() {
     const total = elapsed / (status.progress / 100);
     return formatDuration(Date.now(), Date.now() + Math.max(0, total - elapsed));
   }, [status?.progress, status?.startTime, isTerminal]);
+
+  useEffect(() => {
+    setVisualizationProgress({ status: currentStatus, stepNumber: step?.stepNumber, progress: status?.progress ?? 0 });
+  }, [currentStatus, setVisualizationProgress, status?.progress, step?.stepNumber]);
 
   useEffect(() => {
     setSelectedCandidateKeys((current) => retainAvailableCandidateSelections(current, candidates));

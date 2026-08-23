@@ -10,6 +10,7 @@ import WorkVisualizationPanel from "@/components/WorkVisualizationPanel";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { WorkLayout } from "@/components/WorkLayout";
 import { AgentProvider } from "@/contexts/AgentContext";
+import { WorkProgressProvider } from "@/contexts/WorkProgressContext";
 import { trpc } from "@/lib/trpc";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useResizablePanel } from "@/hooks/useResizablePanel";
@@ -121,6 +122,7 @@ export default function Home() {
   if (!isMobile) {
     return (
       <AgentProvider>
+        <WorkProgressProvider>
         <SettingsPanel open={showSettings} onOpenChange={setShowSettings} />
         <div className="flex flex-col h-screen w-screen overflow-hidden bg-background fixed inset-0">
 
@@ -292,6 +294,7 @@ export default function Home() {
             </>
           </div>
         </div>
+        </WorkProgressProvider>
       </AgentProvider>
     );
   }
@@ -301,6 +304,7 @@ export default function Home() {
   // ════════════════════════════════════════════════════════════════════════════
   return (
     <AgentProvider>
+      <WorkProgressProvider>
       <SettingsPanel open={showSettings} onOpenChange={setShowSettings} />
       <div className="flex flex-col h-screen overflow-hidden bg-background">
         {/* ── Top Navigation Bar ─────────────────────────────────────────── */}
@@ -424,6 +428,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+      </WorkProgressProvider>
     </AgentProvider>
   );
 }
