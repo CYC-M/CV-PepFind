@@ -1,6 +1,6 @@
-import { motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useMemo, useState } from 'react';
-import { CheckCircle2, Circle, CircleDashed, Dna, FlaskConical, Loader2, PauseCircle, Sparkles, Target, Trophy, Workflow, XCircle } from 'lucide-react';
+import { CheckCircle2, Circle, CircleDashed, Dna, FlaskConical, Loader2, Pause, PauseCircle, Play, Sparkles, Square, Target, Trophy, Workflow, XCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useWorkProgress } from '@/contexts/WorkProgressContext';
 import { getWorkflowNodeProgress, getWorkflowNodeStates, type WorkflowNodeStatus } from '@shared/workflowNodeStatus';
@@ -31,7 +31,7 @@ const stateMeta: Record<WorkflowNodeStatus, { label: string; icon: typeof Circle
 export default function WorkVisualizationPanel() {
   const [hoveredNode, setHoveredNode] = useState<number | null>(null);
   const shouldReduceMotion = useReducedMotion();
-  const { progress } = useWorkProgress();
+  const { progress, controls } = useWorkProgress();
   const nodeStates = useMemo(() => getWorkflowNodeStates(progress.status, progress.stepNumber), [progress.status, progress.stepNumber]);
   const nodeProgress = useMemo(() => getWorkflowNodeProgress(progress.status, progress.stepNumber, progress.progress), [progress.progress, progress.status, progress.stepNumber]);
   const overallState = progress.status === 'pending' ? 'waiting' : progress.status === 'running' ? 'running' : progress.status === 'paused' ? 'paused' : progress.status === 'completed' ? 'completed' : 'failed';
@@ -87,6 +87,8 @@ export default function WorkVisualizationPanel() {
       </div>
 
       <div className="z-10 text-center"><div className="mb-2 flex items-center justify-center gap-2"><Sparkles className="h-4 w-4 text-primary" /><h2 className="text-lg font-semibold text-foreground/90">多肽工作台</h2></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">从自然语言需求出发，依次完成靶点与约束解析、候选构建、理化筛选和亲和排序，再返回优先级候选。</p><span className={`mt-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${overallMeta.card} ${overallMeta.labelTone}`}><overallMeta.icon className={`h-3 w-3 ${overallState === 'running' && !shouldReduceMotion ? 'animate-spin' : ''}`} />流程{overallMeta.label}{progress.status !== 'pending' && ` · ${Math.round(progress.progress)}%`}</span></div>
+
+      <AnimatePresence initial={false}>{controls.available && <motion.div initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={shouldReduceMotion ? undefined : { opacity: 0, y: 4 }} transition={{ duration: shouldReduceMotion ? 0 : 0.18, ease: [0.23, 1, 0.32, 1] }} className="z-10 flex w-[260px] items-center justify-between gap-2 rounded-xl border border-primary/30 bg-card/80 px-2.5 py-2 shadow-lg shadow-primary/10 backdrop-blur-sm"><span className="text-[10px] font-semibold text-foreground/85">任务控制</span><div className="flex gap-1.5"><button type="button" onClick={controls.onToggle} disabled={controls.pending} className="inline-flex h-7 items-center gap-1 rounded-lg border border-primary/35 bg-primary/10 px-2 text-[10px] font-semibold text-primary transition-all hover:bg-primary/20 active:scale-[0.97] disabled:cursor-wait disabled:opacity-50" aria-label={controls.paused ? '恢复工作流' : '暂停工作流'}>{controls.paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}{controls.paused ? '恢复' : '暂停'}</button><button type="button" onClick={controls.onCancel} disabled={controls.pending} className="inline-flex h-7 items-center gap-1 rounded-lg border border-rose-400/35 bg-rose-400/10 px-2 text-[10px] font-semibold text-rose-200 transition-all hover:bg-rose-400/20 active:scale-[0.97] disabled:cursor-wait disabled:opacity-50" aria-label="取消当前工作流"><Square className="h-3 w-3" />取消</button></div></motion.div>}</AnimatePresence>
 
       <div className="z-10 grid grid-cols-4 gap-2">{workspaceFeatures.map(({ icon: Icon, label }, index) => { const nodeState = nodeStates[index]; const meta = stateMeta[nodeState]; const StatusIcon = meta.icon; return <motion.div key={label} className={`flex min-w-0 flex-col items-center gap-1.5 rounded-xl border px-2 py-2 transition-colors ${meta.card}`} animate={hoveredNode === index ? { y: -2 } : { y: 0 }} transition={{ duration: shouldReduceMotion ? 0 : 0.18, ease: [0.23, 1, 0.32, 1] }}><span className="relative"><Icon className="h-4 w-4 text-primary/80" /><StatusIcon className={`absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-full bg-card ${meta.labelTone} ${nodeState === 'running' && !shouldReduceMotion ? 'animate-spin' : ''}`} /></span><span className="whitespace-nowrap text-[9px] text-muted-foreground">{label}</span></motion.div>; })}</div>
     </div>

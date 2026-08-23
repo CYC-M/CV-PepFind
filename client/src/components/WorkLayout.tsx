@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   Activity,
@@ -34,6 +34,7 @@ import { calculatePeptideMetrics } from '@shared/peptideMetrics';
 import { CANDIDATE_COMPARISON_METRICS, getCandidateComparisonValue, retainAvailableCandidateSelections } from '@shared/candidateComparison';
 import { extractWorkTarget } from '@shared/workRequest';
 import { getWorkPhaseProgress } from '@shared/workStages';
+import { toast } from 'sonner';
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed']);
 
@@ -169,8 +170,10 @@ export function WorkLayout() {
   const [selectedCandidateKeys, setSelectedCandidateKeys] = useState<string[]>([]);
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [showSequenceInput, setShowSequenceInput] = useState(false);
+  const resultSectionRef = useRef<HTMLDivElement>(null);
+  const completionToastTaskRef = useRef<string | null>(null);
   const reducedMotion = useReducedMotion();
-  const { setProgress: setVisualizationProgress } = useWorkProgress();
+  const { setProgress: setVisualizationProgress, setControls: setVisualizationControls } = useWorkProgress();
 
   const createTask = trpc.designTask.create.useMutation();
   const startTask = trpc.designTask.start.useMutation();
@@ -217,13 +220,34 @@ export function WorkLayout() {
       await utils.designTask.getStatus.invalidate({ taskId: created.taskId });
     } catch (error) { setFormError(error instanceof Error ? error.message : '任务启动失败，请稍后重试。'); }
   };
-  const handlePauseResume = async () => { if (!taskId) return; try { if (currentStatus === 'paused') await resumeTask.mutateAsync({ taskId }); else await pauseTask.mutateAsync({ taskId }); await utils.designTask.getStatus.invalidate({ taskId }); } catch (error) { setFormError(error instanceof Error ? error.message : '任务状态更新失败。'); } };
-  const handleCancel = async () => { if (!taskId) return; try { await cancelTask.mutateAsync({ taskId }); await utils.designTask.getStatus.invalidate({ taskId }); } catch (error) { setFormError(error instanceof Error ? error.message : '停止任务失败。'); } };
+  const handlePauseResume = useCallback(async () => { if (!taskId) return; try { if (currentStatus === 'paused') await resumeTask.mutateAsync({ taskId }); else await pauseTask.mutateAsync({ taskId }); await utils.designTask.getStatus.invalidate({ taskId }); } catch (error) { setFormError(error instanceof Error ? error.message : '任务状态更新失败。'); } }, [currentStatus, pauseTask, resumeTask, taskId, utils.designTask.getStatus]);
+  const handleCancel = useCallback(async () => { if (!taskId) return; try { await cancelTask.mutateAsync({ taskId }); await utils.designTask.getStatus.invalidate({ taskId }); } catch (error) { setFormError(error instanceof Error ? error.message : '停止任务失败。'); } }, [cancelTask, taskId, utils.designTask.getStatus]);
+  const handleViewResults = useCallback(() => { resultSectionRef.current?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' }); }, [reducedMotion]);
   const handleReset = () => { setTaskId(null); setFormError(null); setSelectedCandidateKeys([]); setComparisonOpen(false); };
   const handleCandidateSelection = (candidate: WorkCandidate, checked: boolean) => { const key = candidateKey(candidate); setSelectedCandidateKeys((current) => checked ? (current.includes(key) || current.length >= 3 ? current : [...current, key]) : current.filter((currentKey) => currentKey !== key)); };
   const handleExport = async () => { if (!taskId || candidates.length === 0) return; const csv = await utils.designTask.exportCSV.fetch({ taskId }); const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = `cv-pepfind-${taskId}.csv`; anchor.click(); URL.revokeObjectURL(url); };
   const handleExportJSON = () => { if (!taskId || candidates.length === 0) return; const payload = { taskId, exportedAt: new Date().toISOString(), targetProtein: status?.config?.targetProtein || targetProtein, requirements: status?.config?.requirements || requirements, candidates: candidates.map((candidate) => ({ ...candidate, physicochemicalMetrics: calculatePeptideMetrics(candidate.sequence) })) }; const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' }); const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = `cv-pepfind-${taskId}.json`; anchor.click(); URL.revokeObjectURL(url); };
   const appendRequirement = (suggestion: string) => setRequirements((current) => current.includes(suggestion) ? current : `${current.replace(/[。；;，,\s]+$/, '')}${current.trim() ? '、' : ''}${suggestion}`);
+
+  useEffect(() => {
+    setVisualizationControls({
+      available: Boolean(taskId) && (currentStatus === 'running' || currentStatus === 'paused'),
+      paused: currentStatus === 'paused',
+      pending: pauseTask.isPending || resumeTask.isPending || cancelTask.isPending,
+      onToggle: handlePauseResume,
+      onCancel: handleCancel,
+    });
+  }, [cancelTask.isPending, currentStatus, handleCancel, handlePauseResume, pauseTask.isPending, resumeTask.isPending, setVisualizationControls, taskId]);
+
+  useEffect(() => {
+    if (!taskId || currentStatus !== 'completed' || completionToastTaskRef.current === taskId) return;
+    completionToastTaskRef.current = taskId;
+    toast.success('多肽设计任务已完成', {
+      description: candidates.length > 0 ? `已生成并排序 ${candidates.length} 个优先级候选多肽。` : '全部工作流节点已完成。',
+      action: { label: '查看最终结果', onClick: handleViewResults },
+      duration: 9000,
+    });
+  }, [candidates.length, currentStatus, handleViewResults, taskId]);
 
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden bg-background" aria-label="Work autonomous peptide design">
@@ -244,7 +268,7 @@ export function WorkLayout() {
 
         {taskId && <div className="space-y-3" aria-label="Work Agent 动态消息">{logs.slice(-40).map((log, index) => <LogMessage key={`${log.timestamp}-${index}`} log={log} isLatest={index === logs.length - 1 && currentStatus === 'running'} />)}</div>}
 
-        {taskId && candidates.length > 0 && <div className="flex gap-2.5"><AgentAvatar /><div className="min-w-0 flex-1 rounded-2xl rounded-tl-sm border border-border bg-card px-3 py-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-semibold">候选多肽</p><p className="mt-0.5 text-[10px] text-muted-foreground">已选择 <span className="font-mono text-primary">{selectedCandidateKeys.length}/3</span> · 至少选 2 项进行对比</p></div><div className="flex items-center gap-1"><Button type="button" size="sm" onClick={() => setComparisonOpen(true)} disabled={selectedCandidates.length < 2} className="h-7 px-2 text-[10px]"><Columns3 className="mr-1 h-3 w-3" />对比</Button><Button type="button" variant="ghost" size="sm" onClick={handleExport} className="h-7 px-1.5 text-[10px]"><Download className="mr-1 h-3 w-3" />CSV</Button><Button type="button" variant="ghost" size="sm" onClick={handleExportJSON} className="h-7 px-1.5 text-[10px]">JSON</Button></div></div><div className="mt-3 space-y-2">{candidates.map((candidate, index) => <CandidateDetailCard key={candidateKey(candidate)} candidate={candidate} index={index} selected={selectedCandidateKeys.includes(candidateKey(candidate))} selectionDisabled={!selectedCandidateKeys.includes(candidateKey(candidate)) && selectedCandidateKeys.length >= 3} onSelectionChange={(checked) => handleCandidateSelection(candidate, checked)} />)}</div></div></div>}
+        {taskId && candidates.length > 0 && <div ref={resultSectionRef} tabIndex={-1} className="flex scroll-mt-3 gap-2.5 outline-none"><AgentAvatar /><div className="min-w-0 flex-1 rounded-2xl rounded-tl-sm border border-border bg-card px-3 py-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-semibold">候选多肽</p><p className="mt-0.5 text-[10px] text-muted-foreground">已选择 <span className="font-mono text-primary">{selectedCandidateKeys.length}/3</span> · 至少选 2 项进行对比</p></div><div className="flex items-center gap-1"><Button type="button" size="sm" onClick={() => setComparisonOpen(true)} disabled={selectedCandidates.length < 2} className="h-7 px-2 text-[10px]"><Columns3 className="mr-1 h-3 w-3" />对比</Button><Button type="button" variant="ghost" size="sm" onClick={handleExport} className="h-7 px-1.5 text-[10px]"><Download className="mr-1 h-3 w-3" />CSV</Button><Button type="button" variant="ghost" size="sm" onClick={handleExportJSON} className="h-7 px-1.5 text-[10px]">JSON</Button></div></div><div className="mt-3 space-y-2">{candidates.map((candidate, index) => <CandidateDetailCard key={candidateKey(candidate)} candidate={candidate} index={index} selected={selectedCandidateKeys.includes(candidateKey(candidate))} selectionDisabled={!selectedCandidateKeys.includes(candidateKey(candidate)) && selectedCandidateKeys.length >= 3} onSelectionChange={(checked) => handleCandidateSelection(candidate, checked)} />)}</div></div></div>}
 
         {taskId && <p className="px-8 text-[9px] leading-4 text-muted-foreground/65">以上为服务端状态、过程摘要与指标形成的可验证任务动态，并非模型隐藏推理链。</p>}
       </div>
