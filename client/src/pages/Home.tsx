@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Dna, History, Settings, ChevronRight, X, Clock,
   Sparkles, Database, MessageSquare, Eye,
@@ -57,6 +57,7 @@ export default function Home() {
   const [mobileTab, setMobileTab] = useState<'chat' | 'work'>(getInitialMode);
 
   const isMobile = useIsMobile();
+  const shouldReduceMotion = useReducedMotion();
   const { data: history } = trpc.peptide.history.useQuery({ limit: 20 });
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -231,8 +232,19 @@ export default function Home() {
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               >
                 {!vizCollapsed && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full min-h-0">
-                    {desktopTab === 'work' ? <WorkVisualizationPanel /> : <AIVisualizationPanel />}
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative h-full min-h-0">
+                    <AnimatePresence initial={false} mode="sync">
+                      <motion.div
+                        key={`visualization-${desktopTab}`}
+                        initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: desktopTab === 'work' ? 18 : -18, scale: 0.985 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: desktopTab === 'work' ? -14 : 14, scale: 0.99 }}
+                        transition={{ duration: shouldReduceMotion ? 0.01 : 0.28, ease: [0.23, 1, 0.32, 1] }}
+                        className="absolute inset-0 h-full min-h-0"
+                      >
+                        {desktopTab === 'work' ? <WorkVisualizationPanel /> : <AIVisualizationPanel />}
+                      </motion.div>
+                    </AnimatePresence>
                   </motion.div>
                 )}
                 <button
